@@ -58,6 +58,16 @@
 				"language": "nrql",
 				"scopeName": "source.nrql",
 				"path": "./nrql.tmGrammar.json"
+			},
+			{
+				"scopeName": "source.nrql.terraform",
+				"path": "./nrql-terraform-injection.tmLanguage.json",
+				"injectTo": [
+					"source.hcl.terraform"
+				],
+				"embeddedLanguages": {
+					"meta.embedded.block.nrql": "nrql"
+				}
 			}
 		],
 		"viewsContainers": {

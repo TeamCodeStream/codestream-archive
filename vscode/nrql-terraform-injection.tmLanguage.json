@@ -1,0 +1,30 @@
+{
+	"fileTypes": ["tf", "tfvars"],
+	"injectionSelector": "L:source.hcl.terraform",
+	"patterns": [
+		{
+			"begin": "\"(SELECT|FROM)\\b",
+			"end": "\"",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.start.hcl"
+				},
+				"1": {
+					"name": "keyword.nrql"
+				}
+			},
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.hcl"
+				}
+			},
+			"name": "meta.embedded.block.nrql",
+			"patterns": [
+				{
+					"include": "source.nrql"
+				}
+			]
+		}
+	],
+	"scopeName": "source.nrql.terraform"
+}
