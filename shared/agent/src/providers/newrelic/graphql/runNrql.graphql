@@ -1,0 +1,15 @@
+query runNrql($accountId: Int!, $nrql: Nrql!, $timeout: Seconds = 60) {
+	actor {
+		account(id: $accountId) {
+			nrql(query: $nrql, timeout: $timeout) {
+				results
+				metadata {
+					timeWindow {
+						begin
+						end
+					}
+				}
+			}
+		}
+	}
+}

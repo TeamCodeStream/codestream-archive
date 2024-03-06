@@ -1,0 +1,13 @@
+query getEntityDeployments($accountId: Int!, $entityGuid: EntityGuid!, $nrql: Nrql!) {
+	actor {
+		account(id: $accountId) {
+			nrql(options: { eventNamespaces: "Marker" }, query: $nrql) {
+				nrql
+				results
+			}
+		}
+		entity(guid: $entityGuid) {
+			permalink
+		}
+	}
+}

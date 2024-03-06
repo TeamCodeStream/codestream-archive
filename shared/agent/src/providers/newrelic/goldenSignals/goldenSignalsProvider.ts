@@ -17,17 +17,23 @@ import {
 	NRErrorResponse,
 	ObservabilityRepo,
 } from "@codestream/protocols/agent";
-import { Logger } from "../../../logger";
-import { escapeNrql, NewRelicGraphqlClient } from "../newRelicGraphqlClient";
+
 import { CSMe } from "@codestream/protocols/api";
-import { lsp, lspHandler } from "../../../system/decorators/lsp";
-import { log } from "../../../system/decorators/log";
-import { ResponseError } from "vscode-jsonrpc/lib/messages";
-import { ReposProvider } from "../repos/reposProvider";
-import { NrApiConfig } from "../nrApiConfig";
+import { print } from "graphql";
 import { uniqBy as _uniqBy } from "lodash";
-import { mapNRErrorResponse, parseId, toFixedNoRounding } from "../utils";
+import { ResponseError } from "vscode-jsonrpc/lib/messages";
+import { Logger } from "../../../logger";
+import { log } from "../../../system/decorators/log";
+import { lsp, lspHandler } from "../../../system/decorators/lsp";
 import { ContextLogger } from "../../contextLogger";
+import runNrqlQuery from "../graphql/runNrql.graphql";
+import { escapeNrql, NewRelicGraphqlClient } from "../newRelicGraphqlClient";
+import { NrApiConfig } from "../nrApiConfig";
+import { ReposProvider } from "../repos/reposProvider";
+import { mapNRErrorResponse, parseId, toFixedNoRounding } from "../utils";
+import entityGoldenMetricsQuery from "./entityGoldenMetrics.graphql";
+import entityIssuesQuery from "./entityIssues.graphql";
+import entityDeploymentsQuery from "./entityDeployments.graphql";
 
 @lsp
 export class GoldenSignalsProvider {
@@ -94,15 +100,6 @@ export class GoldenSignalsProvider {
 	async getPillsData(entityGuid: string, accountId?: number): Promise<any> {
 		if (entityGuid && accountId) {
 			try {
-				const countQuery = [
-					"SELECT",
-					"latest(deploymentId) AS 'deploymentId',",
-					"latest(timestamp) AS 'timestamp'",
-					"FROM Deployment",
-					`WHERE entity.guid = '${entityGuid}'`,
-					"SINCE 13 months ago",
-				].join(" ");
-
 				const countResponse = await this.graphqlClient.query<{
 					actor: {
 						account: {
@@ -117,25 +114,18 @@ export class GoldenSignalsProvider {
 							permalink: string;
 						};
 					};
-				}>(
-					`query fetchErrorRate($accountId:Int!, $entityGuid:EntityGuid!) {
-				actor {
-					account(id: $accountId) {
-						nrql(
-							options: { eventNamespaces: "Marker" }
-							query: "${countQuery}"
-						) { nrql results }
-					}
-					entity(guid: $entityGuid) {
-						permalink
-					}
-				}
-			}`,
-					{
-						accountId: accountId,
-						entityGuid: entityGuid,
-					}
-				);
+				}>(print(entityDeploymentsQuery), {
+					accountId: accountId,
+					entityGuid: entityGuid,
+					nrql: [
+						"SELECT",
+						"latest(deploymentId) AS 'deploymentId',",
+						"latest(timestamp) AS 'timestamp'",
+						"FROM Deployment",
+						`WHERE entity.guid = '${entityGuid}'`,
+						"SINCE 13 months ago",
+					].join(" "),
+				});
 
 				const countResults = countResponse.actor.account.nrql?.results[0];
 
@@ -146,16 +136,6 @@ export class GoldenSignalsProvider {
 				const deployListUrl = this.deltaUrl(entityGuid);
 
 				const threeHoursLater = timestamp + 10800000;
-
-				const comparisonQuery = [
-					"FROM Metric",
-					"SELECT",
-					"average(newrelic.goldenmetrics.apm.application.responseTimeMs) AS 'responseTimeMs',",
-					"average(newrelic.goldenmetrics.apm.application.errorRate) AS 'errorRate'",
-					`WHERE entity.guid = '${entityGuid}'`,
-					`SINCE ${timestamp} UNTIL ${threeHoursLater}`,
-					`COMPARE WITH 3 hours ago`,
-				].join(" ");
 
 				const comparisonQueryData = await this.graphqlClient.query<{
 					actor: {
@@ -170,21 +150,18 @@ export class GoldenSignalsProvider {
 							};
 						};
 					};
-				}>(
-					`query fetchErrorRate($accountId:Int!) {
-					actor {
-						account(id: $accountId) {
-							nrql(
-								
-								query: "${comparisonQuery}"
-							) { nrql results }
-						}
-					}
-				}`,
-					{
-						accountId: accountId,
-					}
-				);
+				}>(print(runNrqlQuery), {
+					accountId: accountId,
+					nrql: [
+						"FROM Metric",
+						"SELECT",
+						"average(newrelic.goldenmetrics.apm.application.responseTimeMs) AS 'responseTimeMs',",
+						"average(newrelic.goldenmetrics.apm.application.errorRate) AS 'errorRate'",
+						`WHERE entity.guid = '${entityGuid}'`,
+						`SINCE ${timestamp} UNTIL ${threeHoursLater}`,
+						`COMPARE WITH 3 hours ago`,
+					].join(" "),
+				});
 
 				const currentMetrics = comparisonQueryData.actor.account.nrql?.results[0];
 				const previousMetrics = comparisonQueryData.actor.account.nrql?.results[1];
@@ -237,26 +214,7 @@ export class GoldenSignalsProvider {
 	): Promise<GetIssuesResponse | NRErrorResponse | undefined> {
 		try {
 			const response = await this.graphqlClient.query<GetIssuesQueryResult>(
-				`query getRecentIssues($id: id!, $entityGuids: [EntityGuid!]) {
-					actor {
-						account(id: $id) {
-						  aiIssues {
-							issues(filter: {entityGuids: $entityGuids, states: ACTIVATED}) {
-							  issues {
-								title
-								deepLinkUrl
-								closedAt
-								updatedAt
-								createdAt
-								priority
-								issueId
-							  }
-							}
-						  }
-						}
-					  }
-				  }				  
-				`,
+				print(entityIssuesQuery),
 				{
 					id: accountId,
 					entityGuids: entityGuid,
@@ -465,6 +423,8 @@ export class GoldenSignalsProvider {
 		const parsedId = parseId(entityGuid)!;
 		const useSpan = metricTimesliceNames?.source === "span";
 
+		const query = print(runNrqlQuery);
+
 		const results = await Promise.all(
 			queries.metricQueries.map(_ => {
 				let _query = useSpan ? _.spanQuery : _.metricQuery;
@@ -483,23 +443,10 @@ export class GoldenSignalsProvider {
 					_query = `${_query} SINCE ${since}`;
 				}
 
-				const q = `query getMetric($accountId: Int!) {
-					actor {
-					  account(id: $accountId) {
-							nrql(query: "${escapeNrql(_query || "")}", timeout: 60) {
-								results
-								metadata {
-									timeWindow {
-										end
-									}
-								}
-							}
-					  }
-					}
-				}`;
 				return this.graphqlClient
-					.query(q, {
+					.query(query, {
 						accountId: parsedId.accountId,
+						nrql: escapeNrql(_query || ""),
 					})
 					.catch(ex => {
 						Logger.warn(ex);
@@ -516,23 +463,10 @@ export class GoldenSignalsProvider {
 					_query = `${_query} SINCE ${since}`;
 				}
 
-				const q = `query getMetric($accountId: Int!) {
-					actor {
-					  account(id: $accountId) {
-							nrql(query: "${escapeNrql(_query || "")}", timeout: 60) {
-								results
-								metadata {
-									timeWindow {
-										end
-									}
-								}
-							}
-					  }
-					}
-				}`;
 				return this.graphqlClient
-					.query(q, {
+					.query(query, {
 						accountId: parsedId.accountId,
+						nrql: escapeNrql(_query || ""),
 					})
 					.catch(ex => {
 						Logger.warn(ex);
@@ -581,29 +515,13 @@ export class GoldenSignalsProvider {
 		accountId?: number
 	): Promise<EntityGoldenMetrics | NRErrorResponse | undefined> {
 		try {
-			const entityGoldenMetricsQuery = `
-				{
-				  actor {
-					entity(guid: "${entityGuid}") {
-					  goldenMetrics {
-						metrics {
-						  title
-						  name
-						  unit
-						  definition {
-							from
-							where
-							select
-						  }
-						}
-					  }
-					}
-				  }
-				}
-			`;
-
 			const entityGoldenMetricsQueryResults =
-				await this.graphqlClient.query<EntityGoldenMetricsQueries>(entityGoldenMetricsQuery);
+				await this.graphqlClient.query<EntityGoldenMetricsQueries>(
+					print(entityGoldenMetricsQuery),
+					{
+						entityGuid: entityGuid,
+					}
+				);
 			const metricDefinitions =
 				entityGoldenMetricsQueryResults?.actor?.entity?.goldenMetrics?.metrics;
 

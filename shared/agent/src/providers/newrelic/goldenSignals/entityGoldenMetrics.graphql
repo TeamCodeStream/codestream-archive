@@ -1,0 +1,18 @@
+query getEntityGoldenMetrics($entityGuid: EntityGuid!) {
+	actor {
+		entity(guid: $entityGuid) {
+			goldenMetrics {
+				metrics {
+					title
+					name
+					unit
+					definition {
+						from
+						where
+						select
+					}
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,19 @@
+query getEntityIssues($id: Int!, $entityGuids: [EntityGuid!]) {
+	actor {
+		account(id: $id) {
+			aiIssues {
+				issues(filter: { entityGuids: $entityGuids, states: ACTIVATED }) {
+					issues {
+						title
+						deepLinkUrl
+						closedAt
+						updatedAt
+						createdAt
+						priority
+						issueId
+					}
+				}
+			}
+		}
+	}
+}
