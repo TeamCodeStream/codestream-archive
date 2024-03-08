@@ -2,6 +2,7 @@ import {
 	EditorEntityGuidsRequest,
 	EditorEntityGuidsResponse,
 	EntityGuidToken,
+	EntityTypeMap,
 	GetEditorEntityGuidsRequestType,
 } from "@codestream/protocols/agent";
 import { DocumentManager } from "../../../documentManager";
@@ -72,11 +73,16 @@ export class EntityGuidDocumentParser {
 				const entity = response.entities.find(e => e.guid === _.guid);
 				if (entity) {
 					_.entity = entity;
+
+					const entityType = _.entity.entityType
+						? EntityTypeMap[_.entity.entityType] ?? _.entity.entityType
+						: _.entity.entityType;
+
 					_.markdownString = `Entity Name: ${entity.name}
 
 Account: ${_.entity.account!.id} - ${_.entity.account!.name}
 
-Type: ${_.entity.type}`;
+Type: ${entityType}`;
 					_.metadata.found = true;
 				}
 			});
