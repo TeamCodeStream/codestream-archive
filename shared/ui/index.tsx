@@ -9,6 +9,7 @@ import {
 	DidChangeProcessBufferNotificationType,
 	DidChangeServerUrlNotificationType,
 	DidChangeVersionCompatibilityNotificationType,
+	DidDetectObservabilityAnomaliesNotificationType,
 	DidEncounterMaintenanceModeNotificationType,
 	RefreshMaintenancePollNotificationType,
 	DidResolveStackTraceLineNotificationType,
@@ -45,6 +46,8 @@ import {
 import { updateConfigs } from "@codestream/webview/store/configs/slice";
 import { fetchReview } from "@codestream/webview/store/reviews/thunks";
 import { switchToTeam } from "@codestream/webview/store/session/thunks";
+import { setAnomalyData} from "@codestream/webview/store/anomalyData/actions";
+
 import "@formatjs/intl-listformat/polyfill-locales";
 import { isEmpty as _isEmpty } from "lodash-es";
 
@@ -112,7 +115,7 @@ import {
 import { ContextState } from "./store/context/types";
 import {
 	appendProcessBuffer,
-	setEditorContext,
+	Context,
 	setEditorLayout,
 } from "./store/editorContext/actions";
 import { EditorContextState } from "./store/editorContext/types";
@@ -286,6 +289,8 @@ function listenForEvents(store) {
 				// console.log("GrokStream", data);
 				store.dispatch(handleGrokChonk(data));
 				break;
+			case ChangeDataType.AnomalyData:
+
 			default:
 				store.dispatch({ type: `ADD_${type.toUpperCase()}`, payload: data });
 		}
@@ -370,6 +375,17 @@ function listenForEvents(store) {
 				textEditorVisibleRanges: params.visibleRanges,
 				textEditorSelections: params.selections,
 				textEditorLineCount: params.lineCount,
+			})
+		);
+	});
+
+	api.on(DidDetectObservabilityAnomaliesNotificationType, params => {
+		console.warn('COLIN: DidDetectObservabilityAnomaliesNotificationType!!!');
+		store.dispatch(
+			setAnomalyData({
+				entityGuid: params.entityGuid,
+				durationAnomalies: params.duration,
+				errorRateAnomalies: params.errorRate
 			})
 		);
 	});

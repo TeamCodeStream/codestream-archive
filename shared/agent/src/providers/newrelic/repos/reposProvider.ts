@@ -103,6 +103,7 @@ export class ReposProvider implements Disposable {
 	): Promise<GetObservabilityReposResponse> {
 		const { force = false, isMultiRegion } = request;
 		const cacheKey = JSON.stringify(request);
+		/*
 		if (!force) {
 			const cached = this._observabilityReposCache.get(cacheKey);
 			if (cached) {
@@ -112,17 +113,22 @@ export class ReposProvider implements Disposable {
 				return cached;
 			}
 		}
+*/
 		const response: GetObservabilityReposResponse = { repos: [] };
 		try {
 			const { scm } = this.sessionServiceContainer;
 			const reposResponse = await scm.getRepos({ includeRemotes: true });
+			console.warn("COLIN: SCM REPOS:", JSON.stringify(reposResponse, undefined, 5));
+			console.warn("COLIN: request.filters:", request.filters);
 			let filteredRepos: ReposScm[] | undefined = reposResponse?.repositories;
 			if (request?.filters?.length) {
 				const repoIds = request.filters.map(_ => _.repoId);
 				filteredRepos = reposResponse.repositories?.filter(r => r.id && repoIds.includes(r.id))!;
 			}
+			console.warn("COLIN: FILTERED REPOS (1):", JSON.stringify(filteredRepos, undefined, 5));
 
 			filteredRepos = filteredRepos?.filter(_ => _.id);
+			console.warn("COLIN: FILTERED REPOS:", JSON.stringify(filteredRepos, undefined, 5));
 			if (!filteredRepos || !filteredRepos.length) return response;
 
 			for (const repo of filteredRepos) {
@@ -147,12 +153,16 @@ export class ReposProvider implements Disposable {
 				const remotes: string[] = repo.remotes?.map(_ => _.rawUrl!);
 
 				// find REPOSITORY entities tied to a remote
+				console.warn("COLIN: remotes are:", JSON.stringify(remotes, undefined, 5));
 				const repositoryEntitiesResponse = await this.findRepositoryEntitiesByRepoRemotes(
 					remotes,
 					force,
 					isMultiRegion
 				);
-
+				console.warn(
+					"COLIN: repositoryEntitiesResponse:",
+					JSON.stringify(repositoryEntitiesResponse, undefined, 5)
+				);
 				if (isNRErrorResponse(repositoryEntitiesResponse)) {
 					return { error: repositoryEntitiesResponse };
 				}
@@ -165,6 +175,7 @@ export class ReposProvider implements Disposable {
 					const entitiesReponse = await this.findRelatedEntityByRepositoryGuids(
 						repositoryEntitiesResponse?.entities?.map(_ => _.guid)
 					);
+					console.warn("COLIN: entitiesResponse:", JSON.stringify(entitiesReponse, undefined, 5));
 					// find the APPLICATION, SERVICE (otel), and AWSLAMBDA entities themselves
 					applicationAssociations = entitiesReponse?.actor?.entities?.filter(
 						_ =>
@@ -174,6 +185,10 @@ export class ReposProvider implements Disposable {
 									r.source?.entity?.type === "SERVICE" ||
 									r.source?.entity?.type === "AWSLAMBDAFUNCTION"
 							).length
+					);
+					console.warn(
+						"COLIN: applicationAssociations:",
+						JSON.stringify(applicationAssociations, undefined, 5)
 					);
 					hasRepoAssociation = applicationAssociations?.length > 0;
 
@@ -213,6 +228,7 @@ export class ReposProvider implements Disposable {
 				const uniqueEntities: Entity[] = [];
 				if (applicationAssociations && applicationAssociations.length) {
 					for (const entity of applicationAssociations) {
+						console.warn("COLIN: entity:", JSON.stringify(entity, undefined, 5));
 						if (!entity.relatedEntities?.results) continue;
 
 						for (const relatedResult of entity.relatedEntities.results) {
@@ -241,11 +257,13 @@ export class ReposProvider implements Disposable {
 								) {
 									continue;
 								}
+								console.warn("COLIN: PUSHING UNIQUE ENTITY:", relatedResult.source.entity);
 								uniqueEntities.push(relatedResult.source.entity);
 							}
 						}
 					}
 				}
+				console.warn("COLIN: UNIQUE ENTITIES:", JSON.stringify(uniqueEntities, undefined, 5));
 				let mappedUniqueEntities = await Promise.all(
 					uniqueEntities.map(async entity => {
 						const languageAndVersionValidation = await this.languageAndVersionValidation(
@@ -275,6 +293,10 @@ export class ReposProvider implements Disposable {
 				mappedUniqueEntities.sort((a, b) =>
 					`${a?.accountName}-${a?.entityName}`.localeCompare(`${b?.accountName}-${b?.entityName}`)
 				);
+				console.warn(
+					"COLIN: mappedUniqueEntities:",
+					JSON.stringify(mappedUniqueEntities, undefined, 5)
+				);
 				response.repos?.push({
 					repoId: repo.id,
 					repoName: folderName,
@@ -283,6 +305,9 @@ export class ReposProvider implements Disposable {
 					hasCodeLevelMetricSpanData: true,
 					entityAccounts: mappedUniqueEntities,
 				});
+				console.warn(
+					"COLIN: PUSHED REPO " + repo.id + ", hasRepoAssociation=" + hasRepoAssociation
+				);
 				ContextLogger.log(`getObservabilityRepos hasRepoAssociation=${hasRepoAssociation}`, {
 					repoId: repo.id,
 					entities: repositoryEntitiesResponse?.entities?.map(_ => _.guid),
@@ -293,8 +318,15 @@ export class ReposProvider implements Disposable {
 			throw ex;
 		}
 
+		console.warn(
+			"COLIN: CACHING OBSERVABILITY REPOS TO " + cacheKey + ":",
+			JSON.stringify(response, undefined, 5)
+		);
 		this._observabilityReposCache.put(cacheKey, response);
 
+		if (!request.filters) {
+			console.warn("COLIN: RETURNING RESPONSE:", JSON.stringify(response, undefined, 5));
+		}
 		return response;
 	}
 
@@ -449,6 +481,7 @@ export class ReposProvider implements Disposable {
 			);
 		}
 		const cacheKey = JSON.stringify(remotes);
+		/*
 		if (!force) {
 			const cached = this._repositoryEntitiesByRepoRemotes.get(cacheKey);
 			if (cached) {
@@ -458,6 +491,7 @@ export class ReposProvider implements Disposable {
 				return cached;
 			}
 		}
+		*/
 		try {
 			const remoteVariants: string[] = await this._memoizedBuildRepoRemoteVariants(remotes);
 			if (!remoteVariants.length) return {};
@@ -486,6 +520,7 @@ export class ReposProvider implements Disposable {
 	}
   }
   `;
+			console.warn("COLIN: ENTITY REPOS QUERY:", JSON.stringify(query, undefined, 5));
 			const queryResponse = await this.graphqlClient.query<EntitySearchResponse>(
 				query,
 				undefined,

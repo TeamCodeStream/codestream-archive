@@ -64,6 +64,8 @@ import {
 	DeleteTeamTagRequestType,
 	DeleteUserRequest,
 	DeleteUserResponse,
+	DetectTeamAnomaliesRequest,
+	DetectTeamAnomaliesRequestType,
 	DidChangeDataNotificationType,
 	DidEncounterInvalidRefreshTokenNotificationType,
 	ERROR_GENERIC_USE_ERROR_MESSAGE,
@@ -2688,6 +2690,23 @@ export class CodeStreamApiProvider implements ApiProvider {
 		throw new Error("Not supported");
 	}
 
+	@lspHandler(DetectTeamAnomaliesRequestType)
+	@log()
+	async detectTeamAnomalies(request: DetectTeamAnomaliesRequest) {
+		const { teams, users } = SessionContainer.instance();
+		const currentTeam = await teams.getByIdFromCache(this.teamId);
+		const currentUser = await users.getByIdFromCache(this.userId);
+		if (!currentTeam) return {};
+
+		// TODO: THIS IS TEMPORARY
+		return this.fetch(`http://localhost:8000/detect/${currentTeam.id}`, {
+			method: "post",
+			headers: {
+				"service-gateway-user-id": currentUser!.nrUserId.toString(),
+			},
+		});
+	}
+
 	async delete<R extends object>(url: string, token?: string | AccessToken): Promise<R> {
 		if (!token && url.indexOf("/no-auth/") === -1) token = this._token;
 		let resp = undefined;
@@ -2753,6 +2772,9 @@ export class CodeStreamApiProvider implements ApiProvider {
 			refreshToken = this._tokenInfo?.refreshToken;
 		}
 		const sanitizedUrl = CodeStreamApiProvider.sanitizeUrl(url);
+		if (url.match(/detect/)) {
+			console.warn("COLIN: sanitizedUrl:", sanitizedUrl);
+		}
 		let traceResult;
 		try {
 			if (init !== undefined || token !== undefined) {
@@ -2794,7 +2816,12 @@ export class CodeStreamApiProvider implements ApiProvider {
 			}
 
 			const method = (init && init.method) || "GET";
-			const absoluteUrl = `${this.baseUrl}${url}`;
+			let absoluteUrl;
+			if (url.match(/^http(s)?:/)) {
+				absoluteUrl = url;
+			} else {
+				absoluteUrl = `${this.baseUrl}${url}`;
+			}
 
 			const context =
 				this._middleware.length > 0

@@ -20,6 +20,8 @@ import {
 	DidChangeServerUrlNotificationType,
 	DidChangeVersionCompatibilityNotification,
 	DidChangeVersionCompatibilityNotificationType,
+	DidDetectObservabilityAnomaliesNotification,
+	DidDetectObservabilityAnomaliesNotificationType,	
 	DidEncounterMaintenanceModeNotificationType,
 	DidResolveStackTraceLineNotificationType,
 	RefreshMaintenancePollNotificationType,
@@ -628,6 +630,10 @@ export class SidebarController implements Disposable {
 				(...args) => this.onDocumentMarkersChanged(webview, ...args),
 				this
 			),
+			Container.agent.onDidDetectObservabilityAnomalies(
+				(...args) => this.onDidDetectObservabilityAnomalies(webview, ...args),
+				this
+			),
 			window.onDidChangeTextEditorSelection(
 				Functions.debounce<(e: TextEditorSelectionChangeEvent) => any>(
 					(...args) => this.onEditorSelectionChanged(webview, ...args),
@@ -774,6 +780,11 @@ export class SidebarController implements Disposable {
 
 	private onDataChanged(webview: WebviewLike, e: DidChangeDataNotification) {
 		webview.notify(DidChangeDataNotificationType, e);
+	}
+
+	private onDidDetectObservabilityAnomalies(webview: WebviewLike, e: DidDetectObservabilityAnomaliesNotification) {
+		Logger.log('COLIN: VSCODE GOT A DID DETECT', e);
+		webview.notify(DidDetectObservabilityAnomaliesNotificationType, e);
 	}
 
 	private onDocumentMarkersChanged(webview: WebviewLike, e: DidChangeDocumentMarkersNotification) {

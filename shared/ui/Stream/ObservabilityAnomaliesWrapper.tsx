@@ -56,6 +56,7 @@ export const ObservabilityAnomaliesWrapper = React.memo((props: Props) => {
 
 	const dispatch = useAppDispatch();
 
+	console.warn('COLIN: props.observabilityAnomalies:', props.observabilityAnomalies);
 	const totalAnomalyArray = props.observabilityAnomalies.errorRate.concat(
 		props.observabilityAnomalies.responseTime
 	);

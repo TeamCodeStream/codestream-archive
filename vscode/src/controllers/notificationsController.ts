@@ -8,6 +8,7 @@ import {
   ReviewPlus
 } from "@codestream/protocols/agent";
 import { Functions } from "../system";
+import { Logger } from "../logger";
 
 type ToastType = "PR" | "Review" | "Codemark";
 
@@ -74,6 +75,7 @@ export class NotificationsController implements Disposable {
   private async onObservabilityAnomaliesDetected(
     notification: DidDetectObservabilityAnomaliesNotification
   ) {
+    Logger.log('COLIN: onObservabilityAnomaliesDetected IN NC!', notification);
     const actions: MessageItem[] = [
       { title: "Details" },
       { title: "Ignore", isCloseAffordance: true }

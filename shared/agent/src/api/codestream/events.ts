@@ -31,6 +31,7 @@ const messageToType: {
 		| MessageType.Echo
 		| MessageType.AsyncError
 		| MessageType.GrokStream
+		| MessageType.AnomalyData
 		| undefined;
 } = {
 	codemark: MessageType.Codemarks,
@@ -57,6 +58,7 @@ const messageToType: {
 	echo: MessageType.Echo,
 	asyncError: MessageType.AsyncError,
 	grokStream: MessageType.GrokStream,
+	anomalyData: MessageType.AnomalyData,
 };
 
 export interface BroadcasterEventsInitializer {
