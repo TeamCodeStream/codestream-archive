@@ -1606,7 +1606,7 @@ export interface GetObservabilityEntitiesByIdRequest {
 }
 
 export interface GetObservabilityEntitiesByIdResponse {
-	entities: Entity[];
+	entities: FetchEntitiesByIdsQuery_RootQueryType_actor_Actor_entities[];
 }
 
 export const GetObservabilityEntitiesByIdRequestType = new RequestType<

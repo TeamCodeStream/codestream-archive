@@ -138,6 +138,9 @@ export class NewRelicGraphqlClient implements Disposable {
 		}
 		return headers;
 	}
+	public async getClient() {
+		return this.client();
+	}
 
 	protected async client(useOtherRegion?: boolean): Promise<GraphQLClient> {
 		let client: GraphQLClient;

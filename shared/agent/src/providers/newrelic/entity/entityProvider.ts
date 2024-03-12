@@ -38,6 +38,7 @@ import { isEmpty as _isEmpty, isUndefined as _isUndefined } from "lodash";
 import { Logger } from "../../../logger";
 import { ContextLogger } from "../../contextLogger";
 import { isEqual } from "lodash";
+import { getSdk } from "../nerdgraph/nerdgraph";
 
 const ENTITY_CACHE_KEY = "entityCache";
 
@@ -49,7 +50,7 @@ interface EntityCache {
 	 * whether the entity was found as a result of a query
 	 */
 	found: boolean;
-	entity: Entity;
+	entity: any;
 }
 
 @lsp
@@ -410,40 +411,15 @@ export class EntityProvider implements Disposable {
 				};
 			});
 
-			const response = await this.graphqlClient.query<{
-				actor: {
-					entities: Entity[];
-				};
-			}>(
-				`query fetchEntitiesByIds($guids: [EntityGuid]!) {
-  actor {    
-    entities(guids: $guids) {
-	 accountId
-	 account {
-        name
-        id
-     }
-	 goldenMetrics {
-        metrics {
-          query
-          name
-        }
-      }
-	 guid
-     name
-	 entityType
-	 type	 
-    }
-  }
-}`,
-				{
-					guids: needed,
-				}
-			);
+			const client = await this.graphqlClient.getClient();
+			const response = await getSdk(client).fetchEntitiesByIds({
+				guids: needed,
+			});
 
 			if (response?.actor?.entities?.length) {
 				// add them to the cache with the found flag set to true
 				const entities = response.actor.entities.map(_ => {
+					_ = _!;
 					this._entityGuidCache[_.guid] = { found: true, entity: _ };
 					return _;
 				});

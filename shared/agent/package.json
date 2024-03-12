@@ -48,7 +48,8 @@
 		"verify": "run-p verify:**",
 		"verify:compile": "tsc --noEmit",
 		"verify:lint": "eslint 'src/**'",
-		"verify:prettier": "prettier --check '**/*.ts' '**/*.js' package.json '**/*.md' ./.prettierrc"
+		"verify:prettier": "prettier --check '**/*.ts' '**/*.js' package.json '**/*.md' ./.prettierrc",
+		"codegen": "graphql-codegen --config codegen.ts"
 	},
 	"dependencies": {
 		"@grpc/grpc-js": "1.8.8",
@@ -67,7 +68,7 @@
 		"eol": "0.9.1",
 		"glob-promise": "4.2.2",
 		"graphql": "15.5.0",
-		"graphql-request": "4.0.0",
+		"graphql-request": "6.1.0",
 		"html-to-text": "9.0.5",
 		"https-proxy-agent": "7.0.2",
 		"ignore": "3.3.10",
@@ -97,6 +98,13 @@
 		"write-file-atomic": "3.0.3"
 	},
 	"devDependencies": {
+		"@graphql-codegen/cli": "5.0.2",
+		"@graphql-codegen/client-preset": "4.2.4",
+		"@graphql-codegen/core": "4.0.2",
+		"@graphql-codegen/introspection": "4.0.3",
+		"@graphql-codegen/typescript": "4.0.6",
+		"@graphql-codegen/typescript-graphql-request": "6.2.0",
+		"@graphql-codegen/typescript-operations": "4.2.0",
 		"@luckycatfactory/esbuild-graphql-loader": "3.8.1",
 		"@microsoft/microsoft-graph-types": "1.10.0",
 		"@types/analytics-node": "3.1.7",

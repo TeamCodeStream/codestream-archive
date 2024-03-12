@@ -1,0 +1,15 @@
+mutation EntityRelationshipUserDefinedCreateOrReplaceMutation(
+	$sourceEntityGuid: EntityGuid!
+	$targetEntityGuid: EntityGuid!
+) {
+	entityRelationshipUserDefinedCreateOrReplace(
+		sourceEntityGuid: $sourceEntityGuid
+		targetEntityGuid: $targetEntityGuid
+		type: BUILT_FROM
+	) {
+		errors {
+			message
+			type
+		}
+	}
+}

@@ -1,0 +1,18 @@
+mutation ReferenceEntityCreateOrUpdateRepositoryMutation(
+	$accountId: Int!
+	$name: String!
+	$url: String!
+) {
+	referenceEntityCreateOrUpdateRepository(
+		sync: true
+		repositories: [{ accountId: $accountId, name: $name, url: $url }]
+	) {
+		created
+		updated
+		failures {
+			guid
+			message
+			type
+		}
+	}
+}

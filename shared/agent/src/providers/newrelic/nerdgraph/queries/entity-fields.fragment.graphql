@@ -1,0 +1,17 @@
+fragment EntityFields on Entity {
+	accountId
+	account {
+		name
+		id
+	}
+	goldenMetrics {
+		metrics {
+			query
+			name
+		}
+	}
+	guid
+	name
+	entityType
+	type
+}

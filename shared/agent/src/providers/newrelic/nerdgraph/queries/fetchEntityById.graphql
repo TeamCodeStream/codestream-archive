@@ -1,0 +1,7 @@
+query fetchEntityById($guid: EntityGuid!) {
+	actor {
+		entity(guid: $guid) {
+			...EntityFields
+		}
+	}
+}
