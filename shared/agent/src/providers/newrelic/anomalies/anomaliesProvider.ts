@@ -50,12 +50,11 @@ export class AnomaliesProvider implements Disposable {
 	private init() {
 		this._pollObservabilityAnomaliesTimeout = setTimeout(
 			this.pollObservabilityAnomalies.bind(this),
-			15 /*2 * 60*/ * 1000
+			2 * 60 * 1000
 		);
 	}
 
 	getLastObservabilityAnomaliesResponse(entityGuid: string) {
-		console.warn("COLIN: GETTING LAST OBS RESPONSE FOR " + entityGuid);
 		return this._lastObservabilityAnomaliesResponse.get(entityGuid);
 	}
 
@@ -81,15 +80,12 @@ export class AnomaliesProvider implements Disposable {
 	): Promise<GetObservabilityAnomaliesResponse> {
 		const cacheKey = this.observabilityAnomaliesCacheKey(request);
 		try {
-			/*
 			const cached = await this._observabilityAnomaliesTimedCache.get(cacheKey);
 			if (cached) {
 				this._lastObservabilityAnomaliesResponse.set(request.entityGuid, cached);
-				console.warn('COLIN: SET LAST FOR ' + request.entityGuid, cached);
 				this.agent.sendNotification(DidChangeCodelensesNotificationType, undefined);
 				return cached;
 			}
-			*/
 		} catch (e) {
 			// ignore
 		}
@@ -109,7 +105,6 @@ export class AnomaliesProvider implements Disposable {
 				this._observabilityAnomaliesTimedCache.put(cacheKey, promise);
 				const response = await promise;
 				this._lastObservabilityAnomaliesResponse.set(request.entityGuid, response);
-				console.warn("COLIN: AFTER DRILL DOWN FOR " + request.entityGuid, response);
 				return true;
 			} catch (ex) {
 				this._observabilityAnomaliesTimedCache.remove(cacheKey);
@@ -214,7 +209,6 @@ export class AnomaliesProvider implements Disposable {
 				Logger.log(
 					"pollObservabilityAnomalies: Getting observability anomalies for entity " + entityGuid
 				);
-				console.warn("COLIN: POLLING!");
 				const response = await this.getObservabilityAnomalies({
 					entityGuid,
 					sinceDaysAgo: parseInt(clmSettings.compareDataLastValue),
@@ -226,7 +220,6 @@ export class AnomaliesProvider implements Disposable {
 					minimumRatio: parseFloat(clmSettings.minimumChangeValue) / 100 + 1,
 					notifyNewAnomalies: !didNotifyNewAnomalies,
 				});
-				console.warn("COLIN: RESPONSE:", response);
 				if (response.didNotifyNewAnomalies) {
 					didNotifyNewAnomalies = true;
 				}

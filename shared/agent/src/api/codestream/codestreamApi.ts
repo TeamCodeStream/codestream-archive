@@ -2696,7 +2696,7 @@ export class CodeStreamApiProvider implements ApiProvider {
 		const { teams, users } = SessionContainer.instance();
 		const currentTeam = await teams.getByIdFromCache(this.teamId);
 		const currentUser = await users.getByIdFromCache(this.userId);
-		if (!currentTeam) return {};
+		if (!currentTeam || !currentUser) return {};
 
 		// TODO: THIS IS TEMPORARY
 		return this.fetch(`http://localhost:8000/detect/${currentTeam.id}`, {
@@ -2772,9 +2772,6 @@ export class CodeStreamApiProvider implements ApiProvider {
 			refreshToken = this._tokenInfo?.refreshToken;
 		}
 		const sanitizedUrl = CodeStreamApiProvider.sanitizeUrl(url);
-		if (url.match(/detect/)) {
-			console.warn("COLIN: sanitizedUrl:", sanitizedUrl);
-		}
 		let traceResult;
 		try {
 			if (init !== undefined || token !== undefined) {

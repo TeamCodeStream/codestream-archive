@@ -167,8 +167,10 @@ describe("Observability", () => {
 	const mockGetServiceLevelObjectives =
 		jest.fn<(params: GetServiceLevelObjectivesRequest) => GetServiceLevelObjectivesResponse>();
 
+	/* NOTE - this method of fetching observability anomalies is deprecated as it is now handled server-side
 	const mockGetObservabilityAnomalies =
 		jest.fn<(params: GetObservabilityAnomaliesRequest) => GetObservabilityAnomaliesResponse>();
+	*/
 
 	const mockGetObservabilityErrors =
 		jest.fn<(params: GetObservabilityErrorsRequest) => GetObservabilityErrorsResponse>();
@@ -192,6 +194,7 @@ describe("Observability", () => {
 			}
 		);
 
+		/* NOTE - this method of fetching observability anomalies is deprecated as it is now handled server-side
 		mockGetObservabilityAnomalies.mockImplementation(
 			(_params: GetObservabilityAnomaliesRequest): GetObservabilityAnomaliesResponse => {
 				return {
@@ -224,6 +227,7 @@ describe("Observability", () => {
 				};
 			}
 		);
+		*/
 
 		mockGetObservabilityErrors.mockImplementation(
 			(_params: GetObservabilityErrorsRequest): GetObservabilityErrorsResponse => {
@@ -341,6 +345,7 @@ describe("Observability", () => {
 			}
 		);
 
+		/* NOTE - this method of fetching observability anomalies is deprecated as it is now handled server-side
 		mockGetObservabilityAnomalies.mockImplementation(
 			(_params: GetObservabilityAnomaliesRequest) => {
 				const response: GetObservabilityAnomaliesResponse = {
@@ -352,7 +357,8 @@ describe("Observability", () => {
 				return response;
 			}
 		);
-
+		*/
+		
 		mockGetObservabilityErrors.mockImplementation((_params: GetObservabilityErrorsRequest) => {
 			const response: GetObservabilityErrorsResponse = {
 				repos: [],
@@ -382,9 +388,11 @@ describe("Observability", () => {
 				case GetServiceLevelObjectivesRequestType: {
 					return mockGetServiceLevelObjectives(params as GetServiceLevelObjectivesRequest);
 				}
+				/* NOTE - this method of fetching observability anomalies is deprecated as it is now handled server-side
 				case GetObservabilityAnomaliesRequestType: {
 					return mockGetObservabilityAnomalies(params as GetObservabilityAnomaliesRequest);
 				}
+				*/
 				case GetObservabilityErrorsRequestType: {
 					return mockGetObservabilityErrors(params as GetObservabilityErrorsRequest);
 				}
@@ -689,6 +697,7 @@ describe("Observability", () => {
 		mockProviderSelectors.isConnected.mockReturnValue(true);
 		mockServiceClickedMethods();
 
+		/* NOTE - this method of fetching observability anomalies is deprecated as it is now handled server-side
 		mockGetObservabilityAnomalies.mockImplementation(_params => {
 			return {
 				errorRate: [],
@@ -697,6 +706,7 @@ describe("Observability", () => {
 				didNotifyNewAnomalies: false,
 			};
 		});
+		*/
 
 		const mockStore = configureStore(middlewares);
 

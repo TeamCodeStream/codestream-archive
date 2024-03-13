@@ -772,9 +772,6 @@ export class AnomalyDetector {
 		await storage.flush();
 
 		if (newDurationAnomalies.length || newErrorRateAnomalies.length) {
-			console.warn(
-				"COLIN: SENDING DidDetectObservabilityAnomaliesNotificationType FROM notifyNewAnomalies"
-			);
 			Container.instance().agent.sendNotification(DidDetectObservabilityAnomaliesNotificationType, {
 				entityGuid: entityGuid,
 				duration: newDurationAnomalies,

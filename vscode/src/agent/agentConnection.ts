@@ -1074,7 +1074,6 @@ export class CodeStreamAgentConnection implements Disposable {
 		prefix: (context, _e: DidDetectObservabilityAnomaliesNotification) => `${context.prefix}`
 	})
 	private onObservabilityAnomaliesDetected(e: DidDetectObservabilityAnomaliesNotification) {
-		Logger.log('COLIN: onObservabilityAnomaliesDetected!', e);
 		this._onDidDetectObservabilityAnomalies.fire(e);
 	}
 

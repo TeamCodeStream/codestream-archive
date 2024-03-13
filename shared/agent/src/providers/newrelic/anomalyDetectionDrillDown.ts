@@ -51,7 +51,6 @@ export class AnomalyDetectorDrillDown {
 	private _releaseBased = false;
 
 	async execute(): Promise<GetObservabilityAnomaliesResponse> {
-		console.warn("COLIN: EXECUTING...");
 		const mockResponse = getAnomalyDetectionMockResponse(this._request);
 		if (mockResponse) {
 			await this.notifyNewAnomalies(mockResponse.responseTime, mockResponse.errorRate, true);
@@ -138,9 +137,6 @@ export class AnomalyDetectorDrillDown {
 		// 	durationAnomalies.push(...scoped.durationAnomalies);
 		// }
 
-		console.warn("COLIN: duration:", durationAnomalies);
-		console.warn("COLIN: errorRate:", errorRateAnomalies);
-
 		try {
 			const telemetry = Container.instance().telemetry;
 			const children = [
@@ -169,12 +165,8 @@ export class AnomalyDetectorDrillDown {
 		}
 
 		let didNotifyNewAnomalies = false;
-		console.warn("COLIN: WANT TO NOTIFY?", this._request.notifyNewAnomalies);
 		if (this._request.notifyNewAnomalies) {
 			try {
-				console.warn("COLIN: NOTIFYING OF NEW ANOMALIES...");
-				console.warn("durationAnomalies:", durationAnomalies);
-				console.warn("errorRateAnomalies:", errorRateAnomalies);
 				didNotifyNewAnomalies = await this.notifyNewAnomalies(
 					durationAnomalies,
 					errorRateAnomalies
@@ -716,9 +708,6 @@ export class AnomalyDetectorDrillDown {
 		errorRateAnomalies: ObservabilityAnomaly[],
 		force = false
 	): Promise<boolean> {
-		console.warn("COLIN: NOTIFYING...");
-		force = true;
-
 		const { entityGuid } = this._request;
 		const { git, users } = SessionContainer.instance();
 		const me = await users.getMe();
@@ -770,16 +759,10 @@ export class AnomalyDetectorDrillDown {
 			};
 		}
 
-		console.warn("COLIN: NEW NOTIFICATIONS:", anomalyNotificationsNew);
-		console.warn("COLIN: newDurationAnomalies:", newDurationAnomalies);
-		console.warn("COLIN: newErrorRateAnomalies:", newErrorRateAnomalies);
 		anomalyNotificationsCollection.set(entityGuid, anomalyNotificationsNew);
 		await storage.flush();
 
 		if (newDurationAnomalies.length || newErrorRateAnomalies.length) {
-			console.warn(
-				"COLIN: SENDING DidDetectObservabilityAnomaliesNotificationType FROM Drill Down"
-			);
 			Container.instance().agent.sendNotification(DidDetectObservabilityAnomaliesNotificationType, {
 				entityGuid: entityGuid,
 				duration: newDurationAnomalies,

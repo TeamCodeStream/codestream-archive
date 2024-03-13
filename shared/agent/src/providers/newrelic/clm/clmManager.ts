@@ -29,7 +29,7 @@ import path from "path";
 import { URI } from "vscode-uri";
 import Cache from "@codestream/utils/system/timedCache";
 import { FLTStrategyFactory } from "./FLTStrategy";
-import { AnomaliesProvider } from "../anomalies/anomaliesProvider";
+//import { AnomaliesProvider } from "../anomalies/anomaliesProvider";
 import { ReposProvider } from "../repos/reposProvider";
 import { NrApiConfig } from "../nrApiConfig";
 import { NewRelicGraphqlClient } from "../newRelicGraphqlClient";
@@ -45,7 +45,7 @@ import { DeploymentsProvider } from "../deployments/deploymentsProvider";
 @lsp
 export class ClmManager implements Disposable {
 	constructor(
-		private anomaliesProvider: AnomaliesProvider,
+		//private anomaliesProvider: AnomaliesProvider,
 		private reposProvider: ReposProvider,
 		private sessionServiceContainer: SessionServiceContainer,
 		private nrApiConfig: NrApiConfig,
@@ -171,9 +171,9 @@ export class ClmManager implements Disposable {
 			const errorRate = this.mergeResults(results.map(_ => _.errorRate));
 			const sampleSize = this.mergeResults(results.map(_ => _.sampleSize));
 
+			/* Deprecated, observability anomalies now being handled server-side
 			const anomalies =
 				this.anomaliesProvider.getLastObservabilityAnomaliesResponse(newRelicEntityGuid);
-			console.warn("COLIN:", anomalies);
 			if (anomalies) {
 				this.addAnomalies(averageDuration, anomalies.responseTime);
 				for (const anomaly of anomalies.responseTime) {
@@ -198,6 +198,7 @@ export class ClmManager implements Disposable {
 					);
 				}
 			}
+			*/
 
 			const deploymentCommit = await this.getDeploymentCommitIfNeeded(newRelicEntityGuid, {
 				averageDuration,

@@ -281,9 +281,6 @@ export const Observability = React.memo((props: Props) => {
 		const company =
 			!_isEmpty(state.companies) && !_isEmpty(team) ? state.companies[team.companyId] : undefined;
 
-
-			console.warn('COLIN: anomalyData:', JSON.stringify(anomalyData, undefined, 5));
-
 		return {
 			sessionStart: state.context.sessionStart,
 			newRelicIsConnected,
@@ -308,8 +305,6 @@ export const Observability = React.memo((props: Props) => {
 			anomalyData
 		};
 	}, shallowEqual);
-
-	console.warn('COLIN: derivedState.anomalyData:', JSON.stringify(derivedState.anomalyData, undefined, 5));
 
 	const NO_ERRORS_ACCESS_ERROR_MESSAGE = "403";
 	const GENERIC_ERROR_MESSAGE = "There was an error loading this data.";
@@ -431,9 +426,8 @@ export const Observability = React.memo((props: Props) => {
 		}
 
 		await getObservabilityErrors();
-		if (expandedEntity && currentRepoId) {
-			console.warn('COLIN: FETCHING ANOMALIES ON expandedEntity:', expandedEntity, currentRepoId);
-			fetchAnomalies(expandedEntity/*, currentRepoId*/);
+		if (expandedEntity) {
+			fetchAnomalies(expandedEntity);
 		}
 	};
 
@@ -533,9 +527,7 @@ export const Observability = React.memo((props: Props) => {
 						fetchObservabilityErrors(e.data.entityGuid, e.data.repoId);
 						fetchGoldenMetrics(e.data.entityGuid);
 						fetchServiceLevelObjectives(e.data.entityGuid);
-						console.warn('COLIN: FETCHING ANOMALIES ON DidChangeObservabilityDataNotificationType:', e.data);
-						console.warn('entityGuid=', e.data.entityGuid);
-						fetchAnomalies(e.data.entityGuid/*, e.data.repoId*/);
+						fetchAnomalies(e.data.entityGuid);
 					}, 2500);
 				}
 			}
@@ -556,14 +548,12 @@ export const Observability = React.memo((props: Props) => {
 
 	useEffect(() => {
 		if (derivedState.anomaliesNeedRefresh) {
-			console.warn('COLIN: FETCHING ANOMALIES BECAUSE anomaliesNeedRefresh', expandedEntity);
-			fetchAnomalies(expandedEntity!/*, currentRepoId*/);
+			fetchAnomalies(expandedEntity!);
 		}
 	}, [derivedState.anomaliesNeedRefresh]);
 
 	useEffect(() => {
 		if (expandedEntity) {
-			console.warn('COLIN: FETCHING ANOMALIES ON EXPANDED ENTITY FROM useEffect:', expandedEntity);
 			fetchAnomalies(expandedEntity);
 		}
 	},[derivedState.anomalyData]);
@@ -603,7 +593,7 @@ export const Observability = React.memo((props: Props) => {
 	useInterval(() => {
 		fetchGoldenMetrics(expandedEntity, true);
 		fetchServiceLevelObjectives(expandedEntity);
-		//fetchAnomalies(expandedEntity || "", currentRepoId);
+		//fetchAnomalies(expandedEntity || "");
 	}, 300000);
 
 	/*
@@ -747,7 +737,6 @@ export const Observability = React.memo((props: Props) => {
 					? derivedState?.company?.isMultiRegion
 					: undefined,
 			});
-console.warn('COLIN: OBS REPOS RESP:', JSON.stringify(response, undefined, 5));
 			if (response.repos) {
 				if (hasFilter) {
 					const existingObservabilityRepos = observabilityRepos.filter(_ => _.repoId !== repoId);
@@ -799,8 +788,7 @@ console.warn('COLIN: OBS REPOS RESP:', JSON.stringify(response, undefined, 5));
 		}
 	};
 
-	/*
-console.warn('COLIN: OUR CURRENT ENTITY GUID IS:', derivedState.currentObservabilityAnomalyEntityGuid);
+	/* Deprecated, observability anomalies now being handled server-side
 	if (derivedState.currentObservabilityAnomalyEntityGuid && derivedState.anomalyData[derivedState.currentObservabilityAnomalyEntityGuid]) {
 		const entityAnomalies = derivedState.anomalyData[derivedState.currentObservabilityAnomalyEntityGuid];
 		setObservabilityAnomalies({
@@ -811,17 +799,15 @@ console.warn('COLIN: OUR CURRENT ENTITY GUID IS:', derivedState.currentObservabi
 	}
 	*/
 
-	const fetchAnomalies = async (entityGuid: string/*, repoId*/) => {
-		dispatch(setRefreshAnomalies(false));
+	const fetchAnomalies = async (entityGuid: string) => {
+		//dispatch(setRefreshAnomalies(false));
 		setCalculatingAnomalies(true);
 		if (!hasDetectedTeamAnomalies) {
-			console.warn('COLIN: DETECTING TEAM ANOMALIES...');
 			HostApi.instance.send(DetectTeamAnomaliesRequestType, {});
 			setHasDetectedTeamAnomalies(true);
 		}
 
 		try {
-			console.warn('COLIN: FETCHING ANOMALIES...', entityGuid);
 			if (derivedState.anomalyData[entityGuid]) {
 				const entityAnomalies = derivedState.anomalyData[entityGuid];
 				const response = {
@@ -830,11 +816,9 @@ console.warn('COLIN: OUR CURRENT ENTITY GUID IS:', derivedState.currentObservabi
 					detectionMethod: entityAnomalies.detectionMethod,
 					didNotifyNewAnomalies: true
 				};
-				//setAnomalyDetectionSupported(true);
 				setObservabilityAnomalies(response);
-				//dispatch(setRefreshAnomalies(false));
 			}
-			return;
+			/* Deprecated in favor of server-side anomaly detection
 			const clmSettings = derivedState?.clmSettings as CLMSettings;
 			const response = await HostApi.instance.send(GetObservabilityAnomaliesRequestType, {
 				entityGuid,
@@ -875,7 +859,6 @@ console.warn('COLIN: OUR CURRENT ENTITY GUID IS:', derivedState.currentObservabi
 						100 +
 					1,
 			});
-			console.warn('COLIN: GOT RESPONSE FOR ' + entityGuid, response);
 			if (response && response.isSupported === false) {
 				setAnomalyDetectionSupported(false);
 			} else {
@@ -883,9 +866,10 @@ console.warn('COLIN: OUR CURRENT ENTITY GUID IS:', derivedState.currentObservabi
 				setObservabilityAnomalies(response);
 				dispatch(setRefreshAnomalies(false));
 			}
+			*/
 		} catch (ex) {
 			console.error("Failed to fetch anomalies", ex);
-			dispatch(setRefreshAnomalies(false));
+			//dispatch(setRefreshAnomalies(false));
 		} finally {
 			setCalculatingAnomalies(false);
 		}
@@ -1028,8 +1012,7 @@ console.warn('COLIN: OUR CURRENT ENTITY GUID IS:', derivedState.currentObservabi
 			fetchGoldenMetrics(expandedEntity, true);
 			fetchServiceLevelObjectives(expandedEntity);
 			fetchObservabilityErrors(expandedEntity, currentRepoId);
-			console.warn('COLIN: FETCHING ANOMALIES ON useEffect', expandedEntity);
-			fetchAnomalies(expandedEntity/*, currentRepoId*/);
+			fetchAnomalies(expandedEntity);
 			handleClickCLMBroadcast(expandedEntity);
 		}
 	}, [expandedEntity]);
@@ -1045,7 +1028,6 @@ console.warn('COLIN: OUR CURRENT ENTITY GUID IS:', derivedState.currentObservabi
 	 *  and fetch corresponding errors
 	 */
 	useEffect(() => {
-console.warn('COLIN: OBS REPOS ARE:', JSON.stringify(observabilityRepos, undefined, 5));
 		if (!_isEmpty(currentRepoId) && !_isEmpty(observabilityRepos)) {
 			const _currentEntityAccounts = observabilityRepos.find(or => {
 				return or.repoId === currentRepoId;
@@ -1057,7 +1039,6 @@ console.warn('COLIN: OBS REPOS ARE:', JSON.stringify(observabilityRepos, undefin
 				)}`
 			);
 			setCurrentEntityAccounts(_currentEntityAccounts);
-console.warn('COLIN: CURRENT ENTITY ACCOUNTS:', JSON.stringify(_currentEntityAccounts, undefined, 5));
 
 			if (_currentEntityAccounts && _currentEntityAccounts.length > 0 && currentRepoId) {
 				// const wasEmpty = _isEmpty(expandedEntity);

@@ -697,20 +697,15 @@ export class CodeStreamSession {
 				this.echoReceived();
 				break;
 			case MessageType.AnomalyData:
-				console.warn("COLIN: ANOMALY DATA:", JSON.stringify(e.data, undefined, 5));
 				if (!(e.data instanceof Array)) return;
 				for (let datum of e.data) {
-					console.warn("datum:", datum);
 					if (typeof datum === "object") {
 						for (let entityGuid in datum) {
-							const not = {
+							this.agent.sendNotification(DidDetectObservabilityAnomaliesNotificationType, {
 								entityGuid,
 								duration: datum[entityGuid].durationAnomalies,
 								errorRate: datum[entityGuid].errorRateAnomalies,
-								detectionMethod: datum[entityGuid].detectionMethod,
-							};
-							console.warn("COLIN: WOULD SEND:", JSON.stringify(not, undefined, 5));
-							this.agent.sendNotification(DidDetectObservabilityAnomaliesNotificationType, not);
+							});
 						}
 					}
 				}

@@ -783,7 +783,6 @@ export class SidebarController implements Disposable {
 	}
 
 	private onDidDetectObservabilityAnomalies(webview: WebviewLike, e: DidDetectObservabilityAnomaliesNotification) {
-		Logger.log('COLIN: VSCODE GOT A DID DETECT', e);
 		webview.notify(DidDetectObservabilityAnomaliesNotificationType, e);
 	}
 

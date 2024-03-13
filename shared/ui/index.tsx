@@ -115,7 +115,7 @@ import {
 import { ContextState } from "./store/context/types";
 import {
 	appendProcessBuffer,
-	Context,
+	setEditorContext,
 	setEditorLayout,
 } from "./store/editorContext/actions";
 import { EditorContextState } from "./store/editorContext/types";
@@ -289,7 +289,6 @@ function listenForEvents(store) {
 				// console.log("GrokStream", data);
 				store.dispatch(handleGrokChonk(data));
 				break;
-			case ChangeDataType.AnomalyData:
 
 			default:
 				store.dispatch({ type: `ADD_${type.toUpperCase()}`, payload: data });
@@ -380,7 +379,6 @@ function listenForEvents(store) {
 	});
 
 	api.on(DidDetectObservabilityAnomaliesNotificationType, params => {
-		console.warn('COLIN: DidDetectObservabilityAnomaliesNotificationType!!!');
 		store.dispatch(
 			setAnomalyData({
 				entityGuid: params.entityGuid,
