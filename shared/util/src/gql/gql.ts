@@ -18,6 +18,7 @@ const documents = {
     "fragment EntityFields on Entity {\n  accountId\n  account {\n    name\n    id\n  }\n  goldenMetrics {\n    metrics {\n      query\n      name\n    }\n  }\n  guid\n  name\n  entityType\n  type\n}": types.EntityFieldsFragmentDoc,
     "query fetchEntitiesByIds($guids: [EntityGuid]!) {\n  actor {\n    entities(guids: $guids) {\n      ...EntityFields\n    }\n  }\n}": types.FetchEntitiesByIdsDocument,
     "query fetchEntityById($guid: EntityGuid!) {\n  actor {\n    entity(guid: $guid) {\n      ...EntityFields\n    }\n  }\n}": types.FetchEntityByIdDocument,
+    "fragment ErrorsInboxAssignments on ErrorsInboxErrorGroupOutline {\n  url\n  state\n  name\n  message\n  id\n  entityGuid\n}\n\nquery getAssignments($userId: Int, $emailAddress: String!) {\n  actor {\n    errorsInbox {\n      errorGroups(\n        filter: {isAssigned: true, assignment: {userId: $userId, userEmail: $emailAddress}}\n      ) {\n        results {\n          ...ErrorsInboxAssignments\n        }\n      }\n    }\n  }\n}": types.ErrorsInboxAssignmentsFragmentDoc,
 };
 
 /**
@@ -54,6 +55,10 @@ export function graphql(source: "query fetchEntitiesByIds($guids: [EntityGuid]!)
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "query fetchEntityById($guid: EntityGuid!) {\n  actor {\n    entity(guid: $guid) {\n      ...EntityFields\n    }\n  }\n}"): (typeof documents)["query fetchEntityById($guid: EntityGuid!) {\n  actor {\n    entity(guid: $guid) {\n      ...EntityFields\n    }\n  }\n}"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "fragment ErrorsInboxAssignments on ErrorsInboxErrorGroupOutline {\n  url\n  state\n  name\n  message\n  id\n  entityGuid\n}\n\nquery getAssignments($userId: Int, $emailAddress: String!) {\n  actor {\n    errorsInbox {\n      errorGroups(\n        filter: {isAssigned: true, assignment: {userId: $userId, userEmail: $emailAddress}}\n      ) {\n        results {\n          ...ErrorsInboxAssignments\n        }\n      }\n    }\n  }\n}"): (typeof documents)["fragment ErrorsInboxAssignments on ErrorsInboxErrorGroupOutline {\n  url\n  state\n  name\n  message\n  id\n  entityGuid\n}\n\nquery getAssignments($userId: Int, $emailAddress: String!) {\n  actor {\n    errorsInbox {\n      errorGroups(\n        filter: {isAssigned: true, assignment: {userId: $userId, userEmail: $emailAddress}}\n      ) {\n        results {\n          ...ErrorsInboxAssignments\n        }\n      }\n    }\n  }\n}"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

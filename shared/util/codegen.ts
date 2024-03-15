@@ -14,9 +14,9 @@ const config: CodegenConfig = {
 			},
 		},
 	},
-	documents: "src/providers/newrelic/nerdgraph/**/*.graphql",
+	documents: "src/nerdgraph/**/*.graphql",
 	generates: {
-		"src/providers/newrelic/nerdgraph/gql/": {
+		"src/gql/": {
 			preset: "client",
 			presetConfig: {
 				// fragmentMasking: false

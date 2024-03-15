@@ -3,7 +3,6 @@ import {
 	CrashOrException,
 	ErrorGroup,
 	ErrorGroupResponse,
-	ErrorGroupsResponse,
 	ErrorGroupStateType,
 	GetNewRelicAssigneesRequestType,
 	GetNewRelicErrorGroupRequest,
@@ -42,7 +41,13 @@ import { customFetch } from "../../../system/fetchCore";
 
 const ALLOWED_ENTITY_ACCOUNT_DOMAINS_FOR_ERRORS = ["APM", "BROWSER", "EXT", "INFRA"];
 import { NraiProvider } from "../nrai/nraiProvider";
-import { EntityType } from "../../../../../util/src/gql/graphql";
+import {
+	EntityType,
+	ErrorsInboxAssignmentsFragment,
+	ErrorsInboxAssignmentsFragmentDoc,
+	GetAssignmentsDocument,
+} from "../../../../../util/src/gql/graphql";
+import { FragmentType, useFragment } from "../../../../../util/src/gql";
 
 @lsp
 export class ObservabilityErrorsProvider {
@@ -281,34 +286,25 @@ export class ObservabilityErrorsProvider {
 	private async getErrorsInboxAssignments(
 		emailAddress: string,
 		userId?: number
-	): Promise<ErrorGroupsResponse | undefined> {
+	): Promise<readonly ErrorsInboxAssignmentsFragment[] | undefined> {
 		try {
 			if (userId == null || userId === 0) {
 				// TODO fix me. remove this once we have a userId on a connection
 				userId = await this.graphqlClient.getUserId();
 			}
-			return this.graphqlClient.query(
-				`query getAssignments($userId: Int, $emailAddress: String!) {
-				actor {
-				  errorsInbox {
-					errorGroups(filter: {isAssigned: true, assignment: {userId: $userId, userEmail: $emailAddress}}) {
-					  results {
-						url
-						state
-						name
-						message
-						id
-						entityGuid
-					  }
-					}
-				  }
-				}
-			  }`,
-				{
-					userId: userId,
-					emailAddress: emailAddress,
-				}
-			);
+			// const useridString = userId?.toString();
+			const client = await this.graphqlClient.getClient();
+			const response = await client.request(GetAssignmentsDocument, {
+				userId: userId,
+				emailAddress: emailAddress,
+			});
+
+			type ErrorsInboxProps = FragmentType<typeof ErrorsInboxAssignmentsFragmentDoc>;
+
+			const thing = response.actor?.errorsInbox?.errorGroups?.results as ErrorsInboxProps[];
+
+			const errorsResponse = useFragment(ErrorsInboxAssignmentsFragmentDoc, thing);
+			return errorsResponse;
 		} catch (ex) {
 			ContextLogger.warn("getErrorsInboxAssignments", {
 				userId: userId,
@@ -1059,19 +1055,19 @@ export class ObservabilityErrorsProvider {
 
 			const result = await this.getErrorsInboxAssignments(me.email);
 			if (result) {
-				response.items = result.actor.errorsInbox.errorGroups.results
+				response.items = result
 					.filter(_ => {
 						// dont show IGNORED or RESOLVED errors
 						return !_.state || _.state === "UNRESOLVED";
 					})
-					.map((_: any) => {
-						return {
+					.map(_ => {
+						return <ObservabilityErrorCore>{
 							entityId: _.entityGuid,
 							errorGroupGuid: _.id,
 							errorClass: _.name,
 							message: _.message,
 							errorGroupUrl: _.url,
-						} as ObservabilityErrorCore;
+						};
 					});
 
 				if (response.items && response.items.find(_ => !_.errorClass)) {

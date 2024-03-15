@@ -1,0 +1,20 @@
+fragment ErrorsInboxAssignments on ErrorsInboxErrorGroupOutline {
+                url
+                state
+                name
+                message
+                id
+                entityGuid
+}
+
+query getAssignments($userId: Int, $emailAddress: String!) {
+    actor {
+        errorsInbox {
+            errorGroups(filter: {isAssigned: true, assignment: {userId: $userId, userEmail: $emailAddress}}) {
+                results {
+                    ...ErrorsInboxAssignments
+                }
+            }
+        }
+    }
+}

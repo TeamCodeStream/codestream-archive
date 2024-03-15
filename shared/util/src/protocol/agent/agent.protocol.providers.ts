@@ -17,7 +17,7 @@ import { LicenseDependencyIssue, VulnerabilityIssue } from "./agent.protocol.fos
 import { ReviewPlus } from "./agent.protocol.reviews";
 import { CSRepository, PullRequestQuery } from "./api.protocol.models";
 import { TrunkCheckResults } from "./agent.protocol.trunk";
-import { EntityFieldsFragment, EntityType } from "../../gql/graphql";
+import { EntityFieldsFragment, EntityType, ErrorsInboxAssignmentsFragmentDoc } from "../../gql/graphql";
 
 export interface NewThirdPartyProviderConfig {
 	id: string;
