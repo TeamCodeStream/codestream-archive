@@ -23,9 +23,9 @@ import {
 	isGraphqlNrqlError,
 	AccessTokenError,
 } from "./newrelic.types";
-import * as Dom from "graphql-request/dist/types.dom";
 import { ContextLogger } from "../contextLogger";
 import { Disposable } from "../../system/disposable";
+import { GraphQLClientRequestHeaders } from "graphql-request/src/types";
 
 const PRODUCTION_US_GRAPHQL_URL = "https://api.newrelic.com/graphql";
 const PRODUCTION_EU_GRAPHQL_URL = "https://api-eu.newrelic.com/graphql";
@@ -39,7 +39,7 @@ export interface HttpErrorResponse {
 	response: {
 		status: number;
 		error: string;
-		headers: Dom.Headers;
+		headers: GraphQLClientRequestHeaders;
 	};
 	request: {
 		query: string;
@@ -202,7 +202,7 @@ export class NewRelicGraphqlClient implements Disposable {
 		}
 		const options = {
 			agent: this.session.proxyAgent ?? undefined,
-			fetch: customFetch,
+			fetch: customFetch as any,
 		};
 		const client = new GraphQLClient(graphQlBaseUrl, options);
 		client.setHeaders(this.headers);
@@ -432,7 +432,8 @@ export class NewRelicGraphqlClient implements Disposable {
 				return true;
 			} catch (potentialEx) {
 				if (isHttpErrorResponse(potentialEx)) {
-					const contentType = potentialEx.response.headers.get("content-type");
+					const dheaders = potentialEx.response.headers as Record<any, any>;
+					const contentType = dheaders["content-type"];
 					const niceText = contentType?.toLocaleLowerCase()?.includes("text/html")
 						? makeHtmlLoggable(potentialEx.response.error)
 						: potentialEx.response.error;

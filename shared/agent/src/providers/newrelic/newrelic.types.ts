@@ -1,11 +1,11 @@
 import {
 	Entity,
-	EntityType,
 	FunctionLocator,
 	GetFileLevelTelemetryResponse,
 	NRErrorType,
 } from "@codestream/protocols/agent";
 import { LanguageId } from "./clm/clmManager";
+import { EntityType } from "../../../../util/src/gql/graphql";
 
 export interface MetricTimeslice {
 	facet: string[];

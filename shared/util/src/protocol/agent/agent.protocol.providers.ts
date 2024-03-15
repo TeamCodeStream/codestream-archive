@@ -17,6 +17,7 @@ import { LicenseDependencyIssue, VulnerabilityIssue } from "./agent.protocol.fos
 import { ReviewPlus } from "./agent.protocol.reviews";
 import { CSRepository, PullRequestQuery } from "./api.protocol.models";
 import { TrunkCheckResults } from "./agent.protocol.trunk";
+import { EntityFieldsFragment, EntityType } from "../../gql/graphql";
 
 export interface NewThirdPartyProviderConfig {
 	id: string;
@@ -1606,7 +1607,7 @@ export interface GetObservabilityEntitiesByIdRequest {
 }
 
 export interface GetObservabilityEntitiesByIdResponse {
-	entities: FetchEntitiesByIdsQuery_RootQueryType_actor_Actor_entities[];
+	entities: EntityFieldsFragment[];
 }
 
 export const GetObservabilityEntitiesByIdRequestType = new RequestType<
@@ -1627,7 +1628,7 @@ export interface EntityGuidToken {
 		end: number;
 	};
 	markdownString?: string;
-	entity: Entity;
+	entity: EntityFieldsFragment;
 	url: string;
 	metadata: {
 		found: boolean;
@@ -2117,29 +2118,29 @@ type Type =
 /**
  * Entity.entityType
  */
-export type EntityTypeKey =
-	| "APM_APPLICATION_ENTITY"
-	| "APM_DATABASE_INSTANCE_ENTITY"
-	| "APM_EXTERNAL_SERVICE_ENTITY"
-	| "BROWSER_APPLICATION_ENTITY"
-	| "DASHBOARD_ENTITY"
-	| "EXTERNAL_ENTITY"
-	| "GENERIC_ENTITY"
-	| "GENERIC_INFRASTRUCTURE_ENTITY"
-	| "INFRASTRUCTURE_AWS_LAMBDA_FUNCTION_ENTITY"
-	| "INFRASTRUCTURE_HOST_ENTITY"
-	| "KEY_TRANSACTION_ENTITY"
-	| "MOBILE_APPLICATION_ENTITY"
-	| "SECURE_CREDENTIAL_ENTITY"
-	| "SYNTHETIC_MONITOR_ENTITY"
-	| "TEAM"
-	| "THIRD_PARTY_SERVICE_ENTITY"
-	| "UNAVAILABLE_ENTITY"
-	| "WORKLOAD_ENTITY";
+// export type EntityTypeKey =
+// 	| "APM_APPLICATION_ENTITY"
+// 	| "APM_DATABASE_INSTANCE_ENTITY"
+// 	| "APM_EXTERNAL_SERVICE_ENTITY"
+// 	| "BROWSER_APPLICATION_ENTITY"
+// 	| "DASHBOARD_ENTITY"
+// 	| "EXTERNAL_ENTITY"
+// 	| "GENERIC_ENTITY"
+// 	| "GENERIC_INFRASTRUCTURE_ENTITY"
+// 	| "INFRASTRUCTURE_AWS_LAMBDA_FUNCTION_ENTITY"
+// 	| "INFRASTRUCTURE_HOST_ENTITY"
+// 	| "KEY_TRANSACTION_ENTITY"
+// 	| "MOBILE_APPLICATION_ENTITY"
+// 	| "SECURE_CREDENTIAL_ENTITY"
+// 	| "SYNTHETIC_MONITOR_ENTITY"
+// 	| "TEAM"
+// 	| "THIRD_PARTY_SERVICE_ENTITY"
+// 	| "UNAVAILABLE_ENTITY"
+// 	| "WORKLOAD_ENTITY";
 
-export type EntityType = EntityTypeKey;
+// export type EntityType = EntityTypeKey;
 
-export const EntityTypeMap: Record<EntityTypeKey, string> = {
+export const EntityTypeMap: Record<EntityType, string> = {
 	APM_APPLICATION_ENTITY: "APM Application",
 	APM_DATABASE_INSTANCE_ENTITY: "APM Database",
 	APM_EXTERNAL_SERVICE_ENTITY: "APM External",
@@ -2154,7 +2155,7 @@ export const EntityTypeMap: Record<EntityTypeKey, string> = {
 	MOBILE_APPLICATION_ENTITY: "Mobile",
 	SECURE_CREDENTIAL_ENTITY: "Secure Credential",
 	SYNTHETIC_MONITOR_ENTITY: "Synthetic Monitor",
-	TEAM: "Team",
+	TEAM_ENTITY: "Team",
 	THIRD_PARTY_SERVICE_ENTITY: "OTEL",
 	UNAVAILABLE_ENTITY: "Unavailable",
 	WORKLOAD_ENTITY: "Workload",

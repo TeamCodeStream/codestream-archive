@@ -78,7 +78,7 @@ export class LinearProvider extends ThirdPartyIssueProviderBase<CSLinearProvider
 		if (this._client === undefined) {
 			const options = {
 				agent: this._httpsAgent ?? undefined,
-				fetch: customFetch,
+				fetch: customFetch as any,
 			};
 			this._client = new GraphQLClient(this.graphQlBaseUrl, options);
 		}

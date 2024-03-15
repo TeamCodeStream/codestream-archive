@@ -1,6 +1,5 @@
 import { lsp, lspHandler } from "../../../system/decorators/lsp";
 import {
-	EntityType,
 	EntityTypeMap,
 	GetLogFieldDefinitionsRequest,
 	GetLogFieldDefinitionsRequestType,
@@ -24,6 +23,7 @@ import { ContextLogger } from "../../contextLogger";
 import { mapNRErrorResponse, parseId } from "../utils";
 import { Strings } from "../../../system";
 import { EntitySearchResult } from "../newrelic.types";
+import { EntityType } from "../../../../../util/src/gql/graphql";
 
 @lsp
 export class NrLogsProvider {

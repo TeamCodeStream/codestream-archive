@@ -1,7 +1,6 @@
 import { lsp, lspHandler } from "../../../system/decorators/lsp";
 import {
 	CrashOrException,
-	EntityType,
 	ErrorGroup,
 	ErrorGroupResponse,
 	ErrorGroupsResponse,
@@ -43,6 +42,7 @@ import { customFetch } from "../../../system/fetchCore";
 
 const ALLOWED_ENTITY_ACCOUNT_DOMAINS_FOR_ERRORS = ["APM", "BROWSER", "EXT", "INFRA"];
 import { NraiProvider } from "../nrai/nraiProvider";
+import { EntityType } from "../../../../../util/src/gql/graphql";
 
 @lsp
 export class ObservabilityErrorsProvider {
@@ -249,8 +249,6 @@ export class ObservabilityErrorsProvider {
 	@log({ timed: true })
 	async getErrorGroupFromNameMessageEntity(name: string, message: string, entityGuid: string) {
 		try {
-
-
 			return this.graphqlClient.query(
 				`query getErrorGroupGuid($name: String!, $message:String!, $entityGuid:EntityGuid!) {
 				actor {

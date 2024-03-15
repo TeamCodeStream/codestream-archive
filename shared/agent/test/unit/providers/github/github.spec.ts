@@ -4,7 +4,6 @@ import { FetchThirdPartyPullRequestRequest } from "@codestream/protocols/agent";
 import { CSMe } from "@codestream/protocols/api";
 import { describe, expect, it } from "@jest/globals";
 import { ClientError, GraphQLClient } from "graphql-request";
-import { GraphQLError } from "graphql-request/dist/types";
 import { mock, mockDeep } from "jest-mock-extended";
 
 import { User } from "../../../../src/api/extensions";
@@ -52,7 +51,7 @@ describe("getPullRequest", () => {
 					},
 					nodes: [null],
 				},
-				errors: <GraphQLError[]>(<unknown>[
+				errors: <any[]>(<unknown>[
 					{
 						type: "NOT_FOUND",
 						path: ["nodes", 0],
@@ -109,7 +108,7 @@ describe("getPullRequest", () => {
 					},
 					nodes: [null],
 				},
-				errors: <GraphQLError[]>(<unknown>[
+				errors: <any[]>(<unknown>[
 					{
 						type: "NOT_FOUND",
 						path: ["nodes", 0],

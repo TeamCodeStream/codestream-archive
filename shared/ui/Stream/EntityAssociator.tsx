@@ -1,6 +1,5 @@
 import {
 	EntityAccount,
-	EntityType,
 	GetObservabilityEntitiesRequestType,
 	WarningOrError,
 } from "@codestream/protocols/agent";
@@ -17,6 +16,7 @@ import { NoContent } from "../src/components/Pane";
 import { useAppDispatch } from "../utilities/hooks";
 import { WarningBox } from "./WarningBox";
 import { isEmpty as _isEmpty } from "lodash";
+import { EntityType } from "../../util/src/gql/graphql";
 
 interface EntityAssociatorProps {
 	title?: string;

@@ -1,7 +1,5 @@
 import { lsp, lspHandler } from "../../../system/decorators/lsp";
 import {
-	Entity,
-	EntityType,
 	EntityTypeMap,
 	ERROR_GENERIC_USE_ERROR_MESSAGE,
 	ERROR_NRQL_GENERIC,
@@ -34,11 +32,15 @@ import {
 import Cache from "@codestream/utils/system/timedCache";
 import { NewRelicGraphqlClient } from "../newRelicGraphqlClient";
 import { Disposable, Strings } from "../../../system";
-import { isEmpty as _isEmpty, isUndefined as _isUndefined } from "lodash";
+import { isEmpty as _isEmpty, isUndefined as _isUndefined, isEqual } from "lodash";
 import { Logger } from "../../../logger";
 import { ContextLogger } from "../../contextLogger";
-import { isEqual } from "lodash";
-import { getSdk } from "../nerdgraph/nerdgraph";
+import {
+	EntityFieldsFragmentDoc,
+	EntityType,
+	FetchEntitiesByIdsDocument,
+} from "../../../../../util/src/gql/graphql";
+import { FragmentType, useFragment } from "../../../../../util/src/gql";
 
 const ENTITY_CACHE_KEY = "entityCache";
 
@@ -412,13 +414,21 @@ export class EntityProvider implements Disposable {
 			});
 
 			const client = await this.graphqlClient.getClient();
-			const response = await getSdk(client).fetchEntitiesByIds({
-				guids: needed,
-			});
 
-			if (response?.actor?.entities?.length) {
+			const response = await client.request(FetchEntitiesByIdsDocument, { guids: needed });
+
+			type EntityFieldsProps = FragmentType<typeof EntityFieldsFragmentDoc>;
+
+			const thing = response.actor?.entities as EntityFieldsProps[];
+
+			const entitiesResponse = useFragment(EntityFieldsFragmentDoc, thing);
+
+			Logger.log(`*** entities from new graphql client!!`);
+
+			if (entitiesResponse.length > 0) {
+				Logger.log(`*** we haz entities from new graphql client!!`);
 				// add them to the cache with the found flag set to true
-				const entities = response.actor.entities.map(_ => {
+				const entities = entitiesResponse.map(_ => {
 					_ = _!;
 					this._entityGuidCache[_.guid] = { found: true, entity: _ };
 					return _;
