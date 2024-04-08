@@ -2699,7 +2699,7 @@ export class CodeStreamApiProvider implements ApiProvider {
 		if (!currentTeam || !currentUser) return {};
 
 		// TODO: THIS IS TEMPORARY
-		return this.fetch(`http://localhost:8000/detect/${currentTeam.id}`, {
+		return this.fetch(`http://localhost:12083/detect/${currentTeam.id}`, {
 			method: "post",
 			headers: {
 				"service-gateway-user-id": currentUser!.nrUserId.toString(),
