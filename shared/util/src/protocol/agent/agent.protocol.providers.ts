@@ -1410,7 +1410,7 @@ export interface GetObservabilityAnomaliesRequest {
 	sinceDaysAgo: number;
 	baselineDays: number;
 	sinceLastRelease: boolean;
-	minimumErrorRate: number;
+	minimumErrorPercentage: number;
 	minimumResponseTime: number;
 	minimumSampleRate: number;
 	minimumRatio: number;

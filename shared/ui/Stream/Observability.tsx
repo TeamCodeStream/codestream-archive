@@ -868,10 +868,10 @@ export const Observability = React.memo((props: Props) => {
 				sinceLastRelease: !_isNil(clmSettings?.compareDataLastReleaseValue)
 					? clmSettings?.compareDataLastReleaseValue
 					: DEFAULT_CLM_SETTINGS.compareDataLastReleaseValue,
-				minimumErrorRate: parseFloat(
-					!_isNil(clmSettings?.minimumErrorRateValue)
-						? clmSettings?.minimumErrorRateValue
-						: DEFAULT_CLM_SETTINGS.minimumErrorRateValue
+				minimumErrorPercentage: parseFloat(
+					!_isNil(clmSettings?.minimumErrorPercentage)
+						? clmSettings?.minimumErrorPercentage
+						: DEFAULT_CLM_SETTINGS.minimumErrorPercentage
 				),
 				minimumResponseTime: parseFloat(
 					!_isNil(clmSettings?.minimumAverageDurationValue)

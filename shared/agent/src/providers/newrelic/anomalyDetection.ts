@@ -129,7 +129,7 @@ export class AnomalyDetector {
 				languageSupport,
 				benchmarkSampleSizes,
 				benchmarkSpans,
-				this._request.minimumErrorRate,
+				this._request.minimumErrorPercentage,
 				this._request.minimumSampleRate,
 				this._request.minimumRatio
 			);

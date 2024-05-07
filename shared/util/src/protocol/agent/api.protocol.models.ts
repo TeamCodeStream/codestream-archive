@@ -910,7 +910,7 @@ export interface CLMSettings {
 	againstDataPrecedingValue: string;
 	minimumChangeValue: string;
 	minimumBaselineValue: string;
-	minimumErrorRateValue: string;
+	minimumErrorPercentage: string;
 	minimumAverageDurationValue: string;
 }
 
@@ -920,7 +920,7 @@ export const DEFAULT_CLM_SETTINGS: CLMSettings = {
 	againstDataPrecedingValue: "21",
 	minimumChangeValue: "10",
 	minimumBaselineValue: "30",
-	minimumErrorRateValue: "1",
+	minimumErrorPercentage: "0.01",
 	minimumAverageDurationValue: "0.1",
 };
 

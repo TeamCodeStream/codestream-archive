@@ -180,7 +180,7 @@ export class AnomalyDetectorDrillDown {
 				languageSupport,
 				benchmarkSpans,
 				scope,
-				this._request.minimumErrorRate,
+				this._request.minimumErrorPercentage,
 				this._request.minimumSampleRate,
 				this._request.minimumRatio
 			);
@@ -624,32 +624,33 @@ export class AnomalyDetectorDrillDown {
 			anomaly.notificationText = "Errors (per minute) " + text;
 			anomaly.entityName = entityAccount?.entityName || "";
 		}
-		for (const anomaly of durationAnomalies) {
-			const counterpart = errorRateAnomalies.find(
-				_ =>
-					_.codeAttrs?.codeNamespace === anomaly.codeAttrs?.codeNamespace &&
-					_.codeAttrs?.codeFunction === anomaly.codeAttrs?.codeFunction
-			);
-			if (counterpart) {
-				anomaly.chartHeaderTexts = {
-					...anomaly.chartHeaderTexts,
-					...counterpart.chartHeaderTexts,
-				};
-			}
-		}
-		for (const anomaly of errorRateAnomalies) {
-			const counterpart = durationAnomalies.find(
-				_ =>
-					_.codeAttrs?.codeNamespace === anomaly.codeAttrs?.codeNamespace &&
-					_.codeAttrs?.codeFunction === anomaly.codeAttrs?.codeFunction
-			);
-			if (counterpart) {
-				anomaly.chartHeaderTexts = {
-					...anomaly.chartHeaderTexts,
-					...counterpart.chartHeaderTexts,
-				};
-			}
-		}
+		// FIXME can't be used, many unrelated metrics coalesce to the same code attrs. eg prepared statements
+		// for (const anomaly of durationAnomalies) {
+		// 	const counterpart = errorRateAnomalies.find(
+		// 		_ =>
+		// 			_.codeAttrs?.codeNamespace === anomaly.codeAttrs?.codeNamespace &&
+		// 			_.codeAttrs?.codeFunction === anomaly.codeAttrs?.codeFunction
+		// 	);
+		// 	if (counterpart) {
+		// 		anomaly.chartHeaderTexts = {
+		// 			...anomaly.chartHeaderTexts,
+		// 			...counterpart.chartHeaderTexts,
+		// 		};
+		// 	}
+		// }
+		// for (const anomaly of errorRateAnomalies) {
+		// 	const counterpart = durationAnomalies.find(
+		// 		_ =>
+		// 			_.codeAttrs?.codeNamespace === anomaly.codeAttrs?.codeNamespace &&
+		// 			_.codeAttrs?.codeFunction === anomaly.codeAttrs?.codeFunction
+		// 	);
+		// 	if (counterpart) {
+		// 		anomaly.chartHeaderTexts = {
+		// 			...anomaly.chartHeaderTexts,
+		// 			...counterpart.chartHeaderTexts,
+		// 		};
+		// 	}
+		// }
 	}
 
 	private _observabilityRepo: ObservabilityRepo | undefined;
