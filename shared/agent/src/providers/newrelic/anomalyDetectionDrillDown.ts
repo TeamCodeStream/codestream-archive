@@ -315,7 +315,7 @@ export class AnomalyDetectorDrillDown {
 
 		const baselineFilter = this.getSampleRateFilterPredicate(baselineSampleRate, minimumSampleRate);
 		const filteredComparison = allComparisons
-			.filter(_ => _.ratio > minimumRatio && _.newValue > minimumErrorRate)
+			.filter(_ => _.ratio > minimumRatio && _.newValue > 0.0001)
 			.filter(baselineFilter);
 
 		return {
