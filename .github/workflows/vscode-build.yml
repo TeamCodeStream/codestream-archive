@@ -20,8 +20,16 @@ jobs:
 
     - name: NPM Install
       run: |
-        cd vscode
-        npm install --no-save
+        cd ./shared/ui
+        npm ci --ignore-scripts
+        cd ../util
+        npm ci --ignore-scripts
+        cd ../build
+        npm ci --ignore-scripts
+        cd ../agent
+        npm ci --ignore-scripts
+        cd ../../vscode
+        npm ci --ignore-scripts
         
     - name: Compile & Verify VSCode
       run: |
