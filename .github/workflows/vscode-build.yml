@@ -9,10 +9,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Setup
-      run: sudo chsh -s /bin/bash
-    
+
     - name: Setup Node.js environment
       uses: actions/setup-node@v4.0.2
       with:
@@ -54,7 +51,7 @@ jobs:
     - name: Test Agent
       run: |
         cd ./shared/agent
-        npm run test:unit
+        npm run test-unit
 
     - name: Test UI
       run: |
