@@ -28,35 +28,24 @@ jobs:
         cd ../../vscode
         npm install --no-save --ignore-scripts
         
-    - name: Compile & Verify VSCode
+    - name: Compile & Verify
       run: |
         cd ./vscode
         npm run verify:compile
-
-    - name: Compile & Verify Agent
-      run: |
-        cd ./shared/agent
+        cd ../shared/agent
         npm run verify:compile
-        
-    - name: Compile & Verify Webviews
-      run: |
-        cd ./shared/ui
+        cd ../ui
         npm run verify:compile
 
-    - name: Test VSCode
-      run: |
-        cd vscode
-        npm run vscode:test
-
-    - name: Test Agent
-      run: |
-        cd ./shared/agent
-        npm run test-unit
-
-    - name: Test UI
-      run: |
-        cd ./shared/agent
-        npm run test:ci
+# need NPM scripts that don't use pushd/popd
+#    - name: Test VSCode
+#      run: |
+#        cd ./vscode
+#        npm run vscode:test
+#        cd ../shared/agent
+#        npm run test-unit
+#        cd ../ui
+#        npm run test:ci
 
     - name: Build Agent
       run: |
