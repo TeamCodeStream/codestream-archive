@@ -16,17 +16,10 @@ jobs:
         node-version: 18.5.0
 
     - name: NPM Install
+      shell: bash
       run: |
-        cd ./shared/ui
-        npm install --no-save --ignore-scripts
-        cd ../util
-        npm install --no-save --ignore-scripts
-        cd ../build
-        npm install --no-save --ignore-scripts
-        cd ../agent
-        npm install --no-save --ignore-scripts
-        cd ../../vscode
-        npm install --no-save --ignore-scripts
+        cd ./vscode
+        npm install --no-save
         
     - name: Compile & Verify
       run: |
