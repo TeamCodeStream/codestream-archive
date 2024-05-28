@@ -16,7 +16,7 @@ jobs:
         node-version: 18.5.0
 
     - name: NPM Install
-      shell: bash
+      shell: pwsh
       run: |
         cd ./vscode
         npm install --no-save
