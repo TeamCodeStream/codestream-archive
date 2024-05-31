@@ -32,11 +32,15 @@ import { getMethodLevelTelemetryMockResponse } from "../anomalyDetectionMockResu
 import { NrApiConfig } from "../nrApiConfig";
 import { GoldenSignalsProvider } from "../goldenSignals/goldenSignalsProvider";
 import { DeploymentsProvider } from "../deployments/deploymentsProvider";
-import { ObservabilityErrorsProvider } from "../errors/observabilityErrorsProvider";
+import {
+	ErrorEventApiResponse,
+	ObservabilityErrorsProvider,
+} from "../errors/observabilityErrorsProvider";
 import { mapNRErrorResponse, parseId } from "../utils";
 import { ContextLogger } from "../../contextLogger";
 import { Disposable } from "../../../system/disposable";
 import { CriticalPathCalculator } from "../criticalPath";
+import { ErrorTraceEventResponse, errorTraceToCommonError } from "../errors/errorQueries";
 
 @lsp
 export class ClmProvider implements Disposable {
@@ -183,11 +187,18 @@ export class ClmProvider implements Disposable {
 				  )
 				: undefined;
 
+			const slowestQueries = await this.getSlowestQueries(
+				request.metricTimesliceNameMapping?.duration,
+				request.scope,
+				entityGuid
+			);
+
 			return {
 				goldenMetrics: goldenMetrics,
 				deployments,
 				criticalPath,
 				errors,
+				slowestQueries,
 				newRelicEntityAccounts: entityAccounts,
 				newRelicAlertSeverity: entity?.alertSeverity,
 				newRelicEntityName: entity?.entityName || "",
@@ -201,6 +212,47 @@ export class ClmProvider implements Disposable {
 		}
 
 		return undefined;
+	}
+
+	async getSlowestQueries(
+		metricName: string | undefined,
+		transactionName: string | undefined,
+		entityGuid: string
+	) {
+		if (!metricName || !transactionName) return [];
+
+		const parsedId = parseId(entityGuid)!;
+		const slowestQueriesQuery =
+			`FROM Span SELECT \`db.statement\` as statement, duration * 1000 as duration ` +
+			`WHERE ` +
+			`  entity.guid = '${entityGuid}' ` +
+			`  AND name = '${metricName}' ` +
+			`  AND db.statement IS NOT NULL ` +
+			`  AND trace.id IN ( ` +
+			`    FROM Transaction ` +
+			`    SELECT uniques(traceId) ` +
+			`    WHERE ` +
+			`      name = '${transactionName}' ` +
+			`      AND entity.guid = '${entityGuid}' ` +
+			`    SINCE 30 minutes AGO LIMIT MAX ` +
+			`  ) ` +
+			`ORDER BY duration DESC SINCE 30 minutes ago LIMIT 10 `;
+
+		const slowestQueries = await this.graphqlClient.runNrql<{
+			statement: string;
+			duration: number;
+		}>(parsedId.accountId, slowestQueriesQuery);
+
+		const formattedSlowestQueries = slowestQueries.map(query => {
+			const statementParts = query.statement.split("*/");
+			const statement = statementParts[statementParts.length - 1].trim();
+			return {
+				statement,
+				duration: query.duration,
+			};
+		});
+
+		return formattedSlowestQueries;
 	}
 
 	/**
@@ -233,24 +285,7 @@ export class ClmProvider implements Disposable {
 		);
 		if (!query) return [];
 
-		const response = await this.graphqlClient.query<{
-			actor: {
-				account: {
-					nrql: {
-						results: {
-							traceId: string;
-							lastOccurrence: number;
-							occurrenceId: string;
-							appName: string;
-							errorClass: string;
-							message: string;
-							entityGuid: string;
-							length: number;
-						}[];
-					};
-				};
-			};
-		}>(
+		const response = await this.graphqlClient.query<ErrorEventApiResponse<ErrorTraceEventResponse>>(
 			`query fetchMethodLevelErrors($accountId:Int!) {
 				actor {
 					account(id: $accountId) {
@@ -266,26 +301,26 @@ export class ClmProvider implements Disposable {
 			? ((
 					await Promise.all(
 						response.actor.account.nrql.results.map(async errorTrace => {
-							const response =
-								await this.observabilityErrorsProvider.getErrorGroupFromNameMessageEntity(
-									errorTrace.errorClass,
-									errorTrace.message,
-									errorTrace.entityGuid
-								);
+							const response = await this.observabilityErrorsProvider.getErrorGroupDetails(
+								errorTrace,
+								"APM_APPLICATION_ENTITY"
+							);
+
+							const commonError = errorTraceToCommonError(errorTrace);
 
 							if (response?.actor?.errorsInbox?.errorGroup) {
 								return {
-									entityId: errorTrace.entityGuid,
+									entityId: commonError.entityGuid,
 									appName: errorTrace.appName,
-									errorClass: errorTrace.errorClass,
-									message: errorTrace.message,
+									errorClass: commonError.errorClass,
+									message: commonError.message,
 									remote: remote,
 									errorGroupGuid: response.actor.errorsInbox.errorGroup.id,
-									occurrenceId: errorTrace.occurrenceId,
-									count: errorTrace.length,
-									lastOccurrence: errorTrace.lastOccurrence,
+									occurrenceId: commonError.occurrenceId,
+									count: commonError.length,
+									lastOccurrence: commonError.lastOccurrence,
 									errorGroupUrl: response.actor.errorsInbox.errorGroup.url,
-									traceId: errorTrace.traceId,
+									traceId: commonError.traceId,
 								};
 							}
 							return undefined;
@@ -363,11 +398,11 @@ export class ClmProvider implements Disposable {
 		return [
 			"SELECT",
 			"count(id) AS 'length',", // first field is used to sort with FACET
-			"latest(timestamp) AS 'lastOccurrence',",
-			"latest(id) AS 'occurrenceId',",
+			"latest(timestamp) AS 'timestamp',",
+			"latest(id) AS 'id',",
 			"latest(appName) AS 'appName',",
-			"latest(error.class) AS 'errorClass',",
-			"latest(message) AS 'message',",
+			"latest(error.class) AS 'error.class',",
+			"latest(error.message) AS 'error.message',",
 			"latest(entityGuid) AS 'entityGuid',",
 			"latest(traceId) AS 'traceId'",
 			"FROM ErrorTrace",

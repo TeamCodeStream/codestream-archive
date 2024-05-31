@@ -14,6 +14,7 @@ import { CodeStreamSession } from "../api/session";
 
 import {
 	IpcRoutes,
+	OpenErrorGroupRequestType,
 	OpenInBufferRequestType,
 	SaveFileRequestType,
 	ShellPromptFolderRequestType,
@@ -22,11 +23,13 @@ import {
 	WebviewIpcNotificationMessage,
 	WebviewIpcRequestMessage,
 	isIpcRequestMessage,
-	isIpcResponseMessage
+	isIpcResponseMessage,
+	OpenUrlRequestType
 } from "@codestream/protocols/webview";
 import { WebviewLike } from "webviews/webviewLike";
 import { NotificationType, RequestType } from "vscode-languageclient";
 import { Container } from "../container";
+import { openUrl } from "../urlHandler";
 
 export class EditorController implements Disposable {
 	private _disposable: Disposable | undefined;
@@ -181,6 +184,21 @@ export class EditorController implements Disposable {
 							success: false
 						};
 					}
+				});
+				break;
+			}
+			case OpenErrorGroupRequestType.method: {
+				webview.onIpcRequest(OpenErrorGroupRequestType, e, async (_type, _params) => {
+					await Container.sidebar.openErrorGroup(_params);
+					return {
+						success: true
+					};
+				});
+				break;
+			}
+			case OpenUrlRequestType.method: {
+				webview.onIpcRequest(OpenUrlRequestType, e, async (_type, _params) => {
+					await openUrl(_params.url);
 				});
 				break;
 			}

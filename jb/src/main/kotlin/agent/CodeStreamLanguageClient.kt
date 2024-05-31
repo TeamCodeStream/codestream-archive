@@ -165,8 +165,9 @@ class CodeStreamLanguageClient(private val project: Project) : LanguageClient {
     }
 
     @JsonNotification("codestream/didDetectObservabilityAnomalies")
-    fun didDetectObservabilityAnomalies(notification: DidDetectObservabilityAnomaliesNotification) {
-        project.notificationComponent?.didDetectObservabilityAnomalies(notification.entityGuid, notification.duration, notification.errorRate)
+    fun didDetectObservabilityAnomalies(json: JsonElement) {
+        project.webViewService?.postNotification("codestream/didDetectObservabilityAnomalies", json, true)
+//        project.notificationComponent?.didDetectObservabilityAnomalies(notification.entityGuid, notification.duration, notification.errorRate)
     }
 
     @JsonNotification("codestream/didChangeBranch")

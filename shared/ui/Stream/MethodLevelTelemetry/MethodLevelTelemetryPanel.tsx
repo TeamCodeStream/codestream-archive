@@ -51,7 +51,7 @@ import {
 	RubyPluginLanguageServer,
 } from "./MissingExtension";
 import { MetaLabel } from "../Codemark/BaseCodemark";
-import { ErrorRow } from "../Observability";
+import { ErrorRow } from "../ErrorRow";
 import { openErrorGroup } from "@codestream/webview/store/codeErrors/thunks";
 
 const Root = styled.div``;
@@ -436,9 +436,7 @@ export const MethodLevelTelemetryPanel = () => {
 																				relatedRepos: response?.relatedRepos || undefined,
 																				timestamp: _.lastOccurrence,
 																				sessionStart: derivedState.sessionStart,
-																				pendingEntityId: response?.entityId || _.entityId,
 																				occurrenceId: response?.occurrenceId || _.occurrenceId,
-																				pendingErrorGroupGuid: _.errorGroupGuid,
 																				openType: "CLM Details",
 																				remote: _?.remote || undefined,
 																				stackSourceMap: response?.stackSourceMap,

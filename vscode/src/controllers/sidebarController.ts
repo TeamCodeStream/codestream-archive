@@ -20,6 +20,8 @@ import {
 	DidChangeSessionTokenStatusNotificationType,
 	DidChangeVersionCompatibilityNotification,
 	DidChangeVersionCompatibilityNotificationType,
+	DidDetectObservabilityAnomaliesNotification,
+	DidDetectObservabilityAnomaliesNotificationType,
 	DidEncounterMaintenanceModeNotificationType,
 	DidResolveStackTraceLineNotificationType,
 	RefreshMaintenancePollNotificationType,
@@ -95,7 +97,9 @@ import {
 	LogoutReason,
 	EditorUndoType,
 	EditorRevealRangeRequestType,
-	EditorHighlightRangeRequestType
+	EditorHighlightRangeRequestType,
+	OpenErrorGroupNotificationType,
+	OpenErrorGroupNotification
 } from "@codestream/protocols/webview";
 import {
 	authentication,
@@ -530,6 +534,21 @@ export class SidebarController implements Disposable {
 	}
 
 	@log()
+	async openErrorGroup(args: OpenErrorGroupNotification): Promise<void> {
+		if (this.visible) {
+			await this._sidebar!.show();
+		} else {
+			await this.show();
+		}
+
+		if (!this._sidebar) {
+			// it's possible that the webview is closing...
+			return;
+		}
+		this._sidebar!.notify(OpenErrorGroupNotificationType, args);
+	}
+
+	@log()
 	async layoutChanged(): Promise<void> {
 		if (!this._sidebar) {
 			// it's possible that the webview is closing...
@@ -589,14 +608,16 @@ export class SidebarController implements Disposable {
 				(...args) => this.onSessionTokenStatusChanged(webview, ...args),
 				this
 			),
-
 			Container.agent.onDidChangeData((...args) => this.onDataChanged(webview, ...args), this),
 			Container.agent.onDidChangeDocumentMarkers(
 				(...args) => this.onDocumentMarkersChanged(webview, ...args),
 				this
 			),
 			configuration.onDidChange((...args) => this.onConfigurationChanged(webview, ...args), this),
-
+			Container.agent.onDidDetectObservabilityAnomalies(
+				(...args) => this.onDidDetectObservabilityAnomalies(webview, ...args),
+				this
+			),
 			// Keep this at the end otherwise the above subscriptions can fire while disposing
 			this._sidebar!
 		);
@@ -727,6 +748,13 @@ export class SidebarController implements Disposable {
 
 	private onDataChanged(webview: WebviewLike, e: DidChangeDataNotification) {
 		webview.notify(DidChangeDataNotificationType, e);
+	}
+
+	private onDidDetectObservabilityAnomalies(
+		webview: WebviewLike,
+		e: DidDetectObservabilityAnomaliesNotification
+	) {
+		webview.notify(DidDetectObservabilityAnomaliesNotificationType, e);
 	}
 
 	private onDocumentMarkersChanged(webview: WebviewLike, e: DidChangeDocumentMarkersNotification) {

@@ -82,6 +82,8 @@ import {
 	WhatsNewNotificationType,
 	SessionTokenStatus,
 	DidChangeSessionTokenStatusNotificationType,
+	DidDetectObservabilityAnomaliesNotificationType,
+	EntityObservabilityAnomalies,
 } from "@codestream/protocols/agent";
 import {
 	CSAccessTokenType,
@@ -131,7 +133,7 @@ import {
 	Strings,
 } from "./system";
 import { testGroups } from "./testGroups";
-import { ProxyAgent, setGlobalDispatcher } from "undici";
+import { ProxyAgent, setGlobalDispatcher, Agent as UndiciAgent } from "undici";
 import * as fs from "fs";
 import { FetchCore } from "./system/fetchCore";
 import { tokenHolder } from "./providers/newrelic/TokenHolder";
@@ -280,6 +282,7 @@ export class CodeStreamSession {
 	private _broadcasterRecoveryTimer: NodeJS.Timeout | undefined;
 	private _echoTimer: NodeJS.Timeout | undefined;
 	private _echoDidTimeout: boolean = false;
+	private _cachedAnomalyData: { [entityGuid: string]: EntityObservabilityAnomalies } = {};
 
 	constructor(
 		public readonly agent: CodeStreamAgent,
@@ -307,11 +310,15 @@ export class CodeStreamSession {
 				Logger.log(
 					`Proxy support is in override with url=${redactedUrl}, strictSSL=${_options.proxy.strictSSL}`
 				);
+				// proxy for PubNub
 				this._httpsAgent = new HttpsProxyAgent(_options.proxy.url, {
-					rejectUnauthorized: _options.proxy.strictSSL,
+					rejectUnauthorized: this.rejectUnauthorized,
 				});
 				// Set proxy for fetchCore (undici and future native fetch)
-				const dispatcher = new ProxyAgent({ uri: new URL(_options.proxy.url).toString() });
+				const dispatcher = new ProxyAgent({
+					uri: new URL(_options.proxy.url).toString(),
+					connect: { rejectUnauthorized: this.rejectUnauthorized },
+				});
 				setGlobalDispatcher(dispatcher);
 			} else {
 				Logger.log("Proxy support is in override, but no proxy settings were provided");
@@ -329,7 +336,17 @@ export class CodeStreamSession {
 				} catch {}
 
 				if (proxyUri) {
-					this._httpsAgent = new HttpsProxyAgent(proxyUrl, { rejectUnauthorized: strictSSL });
+					// proxy for PubNub
+					this._httpsAgent = new HttpsProxyAgent(proxyUrl, {
+						rejectUnauthorized: this.rejectUnauthorized,
+					});
+					// Set proxy for fetchCore (undici and future native fetch)
+					setGlobalDispatcher(
+						new ProxyAgent({
+							uri: proxyUrl,
+							connect: { rejectUnauthorized: this.rejectUnauthorized },
+						})
+					);
 				}
 			} else {
 				Logger.log("Proxy support is on, but no proxy url was found");
@@ -339,9 +356,18 @@ export class CodeStreamSession {
 		}
 
 		if (!this._httpsAgent) {
+			// agent for PubNub
 			this._httpsAgent = new HttpsAgent({
 				rejectUnauthorized: this.rejectUnauthorized,
 			});
+			// Set agent for fetchCore (undici and future native fetch)
+			setGlobalDispatcher(
+				new UndiciAgent({
+					connect: {
+						rejectUnauthorized: this.rejectUnauthorized,
+					},
+				})
+			);
 		}
 
 		// if our api server is http (on-prem installation), create a separate http agent
@@ -357,7 +383,7 @@ export class CodeStreamSession {
 		this._api = new CodeStreamApiProvider(
 			_options.serverUrl?.trim(),
 			this.versionInfo,
-			this._httpAgent || this._httpsAgent,
+			this._httpAgent ?? this._httpsAgent,
 			this.rejectUnauthorized,
 			this._nrFetchClient
 		);
@@ -450,10 +476,7 @@ export class CodeStreamSession {
 		this.agent.registerHandler(
 			BootstrapRequestType,
 			async (e, cancellationToken: CancellationToken) => {
-				const { companies, repos, streams, teams, users, codeErrors } = SessionContainer.instance();
-
-				// needed to ensure we subscribe to object streams for all code errors we have access to
-				await codeErrors.ensureCached();
+				const { companies, repos, streams, teams, users } = SessionContainer.instance();
 
 				const promise = Promise.all([
 					companies.get(),
@@ -581,14 +604,6 @@ export class CodeStreamSession {
 		}
 
 		switch (e.type) {
-			case MessageType.Codemarks:
-				const codemarks = await SessionContainer.instance().codemarks.enrichCodemarks(e.data);
-				this._onDidChangeCodemarks.fire(codemarks);
-				this.agent.sendNotification(DidChangeDataNotificationType, {
-					type: ChangeDataType.Codemarks,
-					data: codemarks,
-				});
-				break;
 			case MessageType.Companies:
 				this.agent.sendNotification(DidChangeDataNotificationType, {
 					type: ChangeDataType.Companies,
@@ -606,20 +621,6 @@ export class CodeStreamSession {
 				}
 				this.agent.sendNotification(DidChangeConnectionStatusNotificationType, data);
 				break;
-			case MessageType.MarkerLocations:
-				this._onDidChangeMarkerLocations.fire(e.data);
-				this.agent.sendNotification(DidChangeDataNotificationType, {
-					type: ChangeDataType.MarkerLocations,
-					data: e.data,
-				});
-				break;
-			case MessageType.Markers:
-				this._onDidChangeMarkers.fire(e.data);
-				this.agent.sendNotification(DidChangeDataNotificationType, {
-					type: ChangeDataType.Markers,
-					data: e.data,
-				});
-				break;
 			case MessageType.Posts:
 				const posts = await SessionContainer.instance().posts.enrichPosts(e.data);
 				this._onDidChangePosts.fire(posts);
@@ -632,19 +633,6 @@ export class CodeStreamSession {
 				this._onDidChangePreferences.fire(e.data);
 				this.agent.sendNotification(DidChangeDataNotificationType, {
 					type: ChangeDataType.Preferences,
-					data: e.data,
-				});
-				break;
-			case MessageType.Repositories:
-				this._onDidChangeRepositories.fire(e.data);
-				this.agent.sendNotification(DidChangeDataNotificationType, {
-					type: ChangeDataType.Repositories,
-					data: e.data,
-				});
-				break;
-			case MessageType.Reviews:
-				this.agent.sendNotification(DidChangeDataNotificationType, {
-					type: ChangeDataType.Reviews,
 					data: e.data,
 				});
 				break;
@@ -703,6 +691,23 @@ export class CodeStreamSession {
 				break;
 			case MessageType.Echo:
 				this.echoReceived();
+				break;
+			case MessageType.AnomalyData:
+				if (!(e.data instanceof Array)) return;
+				for (let datum of e.data) {
+					if (typeof datum === "object") {
+						for (let entityGuid in datum) {
+							this._cachedAnomalyData[entityGuid] = datum[
+								entityGuid
+							] as EntityObservabilityAnomalies;
+							this.agent.sendNotification(DidDetectObservabilityAnomaliesNotificationType, {
+								entityGuid,
+								duration: datum[entityGuid].durationAnomalies,
+								errorRate: datum[entityGuid].errorRateAnomalies,
+							});
+						}
+					}
+				}
 				break;
 		}
 	}
@@ -885,6 +890,10 @@ export class CodeStreamSession {
 		return this.environmentInfo.telemetryEndpoint;
 	}
 
+	get o11yServerUrl() {
+		return this.environmentInfo.o11yServerUrl;
+	}
+
 	get disableStrictSSL(): boolean {
 		return this._options.disableStrictSSL != null ? this._options.disableStrictSSL : false;
 	}
@@ -937,6 +946,10 @@ export class CodeStreamSession {
 	private _providers: ThirdPartyProviders = {};
 	get providers() {
 		return this._providers!;
+	}
+
+	public getCachedAnomalyData(entityGuid: string): EntityObservabilityAnomalies | undefined {
+		return this._cachedAnomalyData[entityGuid];
 	}
 
 	@memoize
@@ -1021,6 +1034,7 @@ export class CodeStreamSession {
 			newRelicLandingServiceUrl: response.newRelicLandingServiceUrl,
 			newRelicApiUrl: response.newRelicApiUrl,
 			newRelicSecApiUrl: response.newRelicSecApiUrl,
+			o11yServerUrl: response.o11yServerUrl,
 			telemetryEndpoint: response.telemetryEndpoint,
 			environmentHosts: response.environmentHosts,
 		};
@@ -1332,8 +1346,6 @@ export class CodeStreamSession {
 				data: data,
 			});
 		});
-
-		SessionContainer.instance().reviews.initializeCurrentBranches();
 
 		// this needs to happen before initializing telemetry, because super-properties are dependent
 		if (this.apiCapabilities.testGroups) {

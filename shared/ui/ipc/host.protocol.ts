@@ -2,11 +2,13 @@ import {
 	ApiVersionCompatibility,
 	Capabilities,
 	CodeStreamEnvironmentInfo,
+	ObservabilityAnomaly,
 	ThirdPartyProviders,
 	Unreads,
 	VersionCompatibility,
 } from "@codestream/protocols/agent";
 import {
+	CLMSettings,
 	CSApiCapabilities,
 	CSCompany,
 	CSMarker,
@@ -172,6 +174,26 @@ export const SaveFileRequestType = new RequestType<SaveFileRequest, SaveFileResp
 	`${IpcRoutes.Host}/file/save`
 );
 
+export interface OpenErrorGroupRequest {
+	errorGroupGuid: string;
+	occurrenceId: string;
+	lastOccurrence: number;
+	sessionStart?: number;
+	openType: string;
+	remote?: string;
+	entityId: string;
+}
+export interface OpenErrorGroupResponse {
+	success: boolean;
+}
+
+export const OpenErrorGroupRequestType = new RequestType<
+	OpenErrorGroupRequest,
+	OpenErrorGroupResponse,
+	void,
+	void
+>(`${IpcRoutes.Host}/errorGroup/open`);
+
 export interface OpenInBufferRequest {
 	contentType: "json" | "csv";
 	data: any;
@@ -320,7 +342,7 @@ export enum ViewColumn {
 }
 
 export interface OpenEditorViewNotification {
-	panel: "logs" | "nrql" | "whatsnew";
+	panel: "anomaly" | "logs" | "nrql" | "whatsnew";
 	title: string;
 	entryPoint: // logs
 	| "global_nav"
@@ -347,6 +369,13 @@ export interface OpenEditorViewNotification {
 	query?: string;
 	hash?: string;
 	traceId?: string;
+	entityName?: string;
+	anomaly?: ObservabilityAnomaly;
+	clmSettings?: CLMSettings;
+	isProductionCloud?: boolean;
+	nrAiUserId?: string;
+	userId?: string;
+	demoMode?: boolean;
 }
 
 export const OpenEditorViewNotificationType = new NotificationType<

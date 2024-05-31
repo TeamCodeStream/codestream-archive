@@ -9,6 +9,7 @@ import {
 	DidChangeProcessBufferNotificationType,
 	DidChangeServerUrlNotificationType,
 	DidChangeVersionCompatibilityNotificationType,
+	DidDetectObservabilityAnomaliesNotificationType,
 	DidEncounterMaintenanceModeNotificationType,
 	RefreshMaintenancePollNotificationType,
 	DidResolveStackTraceLineNotificationType,
@@ -40,12 +41,12 @@ import {
 	handleGrokChonk,
 	handleGrokError,
 	openErrorGroup,
-	processCodeErrorsMessage,
 	resolveStackTraceLine,
 } from "@codestream/webview/store/codeErrors/thunks";
 import { updateConfigs } from "@codestream/webview/store/configs/slice";
 import { fetchReview } from "@codestream/webview/store/reviews/thunks";
 import { switchToTeam } from "@codestream/webview/store/session/thunks";
+import { setAnomalyData } from "@codestream/webview/store/anomalyData/actions";
 import "@formatjs/intl-listformat/polyfill-locales";
 import { isEmpty as _isEmpty } from "lodash-es";
 
@@ -64,7 +65,6 @@ import {
 	HostDidReceiveRequestNotificationType,
 	RouteControllerType,
 	RouteWithQuery,
-	ShowCodeErrorNotificationType,
 	ShowCodemarkNotificationType,
 	ShowProgressIndicatorType,
 	ShowPullRequestNotificationType,
@@ -78,6 +78,7 @@ import {
 	OpenEditorViewNotificationType,
 	InitiateNrqlExecutionNotificationType,
 	ViewColumn,
+	OpenErrorGroupNotificationType,
 } from "./ipc/webview.protocol";
 import { CodeStreamState, store, StoreType } from "./store";
 import { bootstrap, reset } from "./store/actions";
@@ -87,7 +88,6 @@ import {
 	apiUpgradeRequired,
 } from "./store/apiVersioning/actions";
 import apiCapabilities from "./store/capabilities/slice";
-import { fetchCodeError } from "./store/codeErrors/actions";
 import { getCodeError } from "./store/codeErrors/reducer";
 import { getCodemark } from "./store/codemarks/reducer";
 import { CodemarksState } from "./store/codemarks/types";
@@ -97,7 +97,7 @@ import {
 	clearCurrentPullRequest,
 	focus,
 	goToSignup,
-	setCurrentCodeError,
+	setCurrentCodeErrorData,
 	setCurrentCodemark,
 	setCurrentMethodLevelTelemetry,
 	setCurrentObservabilityAnomaly,
@@ -273,9 +273,6 @@ function listenForEvents(store: StoreType) {
 			case ChangeDataType.ApiCapabilities:
 				store.dispatch(apiCapabilitiesUpdated(data));
 				break;
-			case ChangeDataType.CodeErrors:
-				store.dispatch(processCodeErrorsMessage(data));
-				break;
 			case ChangeDataType.AsyncError:
 				// Only 1 error type right now
 				store.dispatch(handleGrokError(data[0] as CSAsyncGrokError));
@@ -372,6 +369,16 @@ function listenForEvents(store: StoreType) {
 		);
 	});
 
+	api.on(DidDetectObservabilityAnomaliesNotificationType, params => {
+		store.dispatch(
+			setAnomalyData({
+				entityGuid: params.entityGuid,
+				durationAnomalies: params.duration,
+				errorRateAnomalies: params.errorRate,
+			})
+		);
+	});
+
 	const onShowStreamNotificationType = async function (streamId, threadId, codemarkId) {
 		if (codemarkId) {
 			let {
@@ -444,16 +451,6 @@ function listenForEvents(store: StoreType) {
 		}
 		store.dispatch(clearCurrentPullRequest());
 		store.dispatch(setCurrentReview(e.reviewId, { openFirstDiff: e.openFirstDiff }));
-	});
-
-	api.on(ShowCodeErrorNotificationType, async e => {
-		const { codeErrors } = store.getState();
-		const codeError = getCodeError(codeErrors, e.codeErrorId);
-		if (!codeError) {
-			await store.dispatch(fetchCodeError(e.codeErrorId));
-		}
-		store.dispatch(clearCurrentPullRequest());
-		store.dispatch(setCurrentCodeError(e.codeErrorId));
 	});
 
 	api.on(ShowPullRequestNotificationType, async e => {
@@ -556,7 +553,8 @@ function listenForEvents(store: StoreType) {
 								let { codeErrors } = store.getState();
 								let codeError = getCodeError(codeErrors, route.id);
 								if (!codeError) {
-									await store.dispatch(fetchCodeError(route.id));
+									// TODO lookup in NR instead of CS
+									// await store.dispatch(fetchCodeError(route.id));
 									let { codeErrors } = store.getState(); // i luv redux
 									codeError = getCodeError(codeErrors, route.id);
 								}
@@ -567,7 +565,7 @@ function listenForEvents(store: StoreType) {
 								}
 
 								store.dispatch(closeAllPanels());
-								store.dispatch(setCurrentCodeError(route.id));
+								store.dispatch(setCurrentCodeErrorData(route.id));
 							}
 							break;
 						}
@@ -672,8 +670,6 @@ function listenForEvents(store: StoreType) {
 									// cache the sessionStart here in case the IDE is restarted
 									sessionStart: state.context.sessionStart,
 									relatedRepos: response?.relatedRepos,
-									pendingEntityId: definedQuery.query.entityId,
-									pendingErrorGroupGuid: definedQuery.query.errorGroupGuid,
 									openType: "Open in IDE Flow",
 									environment: definedQuery.query.env,
 									stackSourceMap: response?.stackSourceMap,
@@ -1030,6 +1026,28 @@ function listenForEvents(store: StoreType) {
 		};
 
 		HostApi.instance.notify(OpenEditorViewNotificationType, props);
+	});
+
+	api.on(OpenErrorGroupNotificationType, async params => {
+		const response = (await HostApi.instance.send(GetObservabilityErrorGroupMetadataRequestType, {
+			errorGroupGuid: params.errorGroupGuid,
+		})) as GetObservabilityErrorGroupMetadataResponse;
+		store.dispatch(
+			openErrorGroup({
+				errorGroupGuid: params.errorGroupGuid,
+				occurrenceId: params.occurrenceId,
+				data: {
+					multipleRepos: response?.relatedRepos?.length > 1,
+					relatedRepos: response?.relatedRepos || undefined,
+					timestamp: params.lastOccurrence,
+					sessionStart: params.sessionStart,
+					occurrenceId: response?.occurrenceId || params.occurrenceId,
+					openType: "CLM Details",
+					remote: params.remote,
+					stackSourceMap: response?.stackSourceMap,
+				},
+			})
+		);
 	});
 }
 

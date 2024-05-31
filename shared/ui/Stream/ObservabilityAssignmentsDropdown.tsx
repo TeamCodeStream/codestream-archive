@@ -3,7 +3,7 @@ import { useAppDispatch, useAppSelector } from "@codestream/webview/utilities/ho
 import React, { useEffect, useState } from "react";
 import { shallowEqual } from "react-redux";
 import { CodeStreamState } from "../store";
-import { ErrorRow } from "./Observability";
+import { ErrorRow } from "./ErrorRow";
 import { Row } from "./CrossPostIssueControls/IssuesPane";
 import Icon from "./Icon";
 import { HostApi } from "../webview-api";
@@ -100,9 +100,7 @@ export const ObservabilityAssignmentsDropdown = React.memo((props: Props) => {
 																multipleRepos: response?.relatedRepos?.length > 1,
 																relatedRepos: response?.relatedRepos,
 																sessionStart: derivedState.sessionStart,
-																pendingEntityId: response.entityId,
 																occurrenceId: response.occurrenceId,
-																pendingErrorGroupGuid: _.errorGroupGuid,
 																openType: "Observability Section",
 																remote: _?.remote || undefined,
 																stackSourceMap: response?.stackSourceMap,

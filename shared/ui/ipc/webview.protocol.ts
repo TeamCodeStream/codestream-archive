@@ -42,10 +42,6 @@ export interface ShowCodeErrorNotification {
 	codeErrorId: string;
 }
 
-export const ShowCodeErrorNotificationType = new NotificationType<ShowCodeErrorNotification, void>(
-	`${IpcRoutes.Webview}/codeError/show`
-);
-
 // TODO: This should be a request to the webview -- not a notification
 export interface ShowPullRequestwNotification {
 	providerId: string;
@@ -230,3 +226,18 @@ export const InitiateNrqlExecutionNotificationType = new NotificationType<
 	InitiateNrqlExecutionNotification,
 	void
 >(`${IpcRoutes.Webview}/nrql/execute`);
+
+export interface OpenErrorGroupNotification {
+	errorGroupGuid: string;
+	occurrenceId: string;
+	lastOccurrence: number;
+	sessionStart?: number;
+	openType: string;
+	remote?: string;
+	entityId: string;
+}
+
+export const OpenErrorGroupNotificationType = new NotificationType<
+	OpenErrorGroupNotification,
+	void
+>(`${IpcRoutes.Webview}/errorGroup/open`);

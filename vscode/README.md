@@ -2,9 +2,11 @@
 
 Shift left by making code performance part of the earliest stages of the development process. 
 
-- Get performance data for individual methods in the code, including notifications about poorly performing methods.
-- Get actionable information, such as errors, vulnerabilities and non-compliant SLOs, for the services built from your code.
+- See how the services built from your code are performing, with information about golden metrics, errors, transaction anomalies, SLOs, and more.
 - Investigate errors more quickly by stepping through the stack trace and collaborating with teammates.
+- Search logs from your IDE to investigate issues without context switching.
+- Run NRQL queries, and save and share queries with your teammates via .nrql files.
+- See performance data for individual methods in the code, right in the editor.
 
 ### Requirements
 

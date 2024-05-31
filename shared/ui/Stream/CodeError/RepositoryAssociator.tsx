@@ -9,7 +9,7 @@ import {
 import { CSCodeError } from "@codestream/protocols/api";
 import { useDidMount } from "@codestream/webview/utilities/hooks";
 import { HostApi } from "@codestream/webview/webview-api";
-import React from "react";
+import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import styled from "styled-components";
 import { logWarning } from "../../logger";
@@ -59,16 +59,23 @@ export function RepositoryAssociator(props: {
 	isLoadingParent?: boolean;
 	noSingleItemDropdownSkip?: boolean;
 	relatedRepos?: RelatedRepository[];
+	telemetryOnDisplay?: {
+		itemType: "span" | "error";
+		modalType: "repoAssociation";
+		entityGuid?: string;
+		accountId?: number;
+	};
 }) {
 	const derivedState = useSelector((state: CodeStreamState) => {
-		const codeError = state.context.currentCodeErrorId
-			? (getCodeError(state.codeErrors, state.context.currentCodeErrorId) as CSCodeError)
+		const codeError = state.context.currentCodeErrorGuid
+			? (getCodeError(state.codeErrors, state.context.currentCodeErrorGuid) as CSCodeError)
 			: undefined;
 
 		return {
 			codeError: codeError,
 			repos: state.repos,
-			relatedRepos: props.relatedRepos || state.context.currentCodeErrorData?.relatedRepos,
+			// TODO no any - actual relatedRepos types are wrong
+			relatedRepos: (props.relatedRepos || state.context.currentCodeErrorData?.relatedRepos) as any,
 		};
 	});
 	const { error: repositoryError } = props;
@@ -81,6 +88,17 @@ export function RepositoryAssociator(props: {
 	const [isLoading, setIsLoading] = React.useState(false);
 	const [hasFetchedRepos, setHasFetchedRepos] = React.useState(false);
 	const [skipRender, setSkipRender] = React.useState(false);
+
+	useEffect(() => {
+		if (props.telemetryOnDisplay && props.telemetryOnDisplay.modalType === "repoAssociation") {
+			HostApi.instance.track("codestream/repo_association_modal displayed", {
+				event_type: "modal_display",
+				entity_guid: props.telemetryOnDisplay.entityGuid,
+				account_id: props.telemetryOnDisplay.accountId,
+				meta_data: `item_type: ${props.telemetryOnDisplay.itemType}`,
+			});
+		}
+	}, [props.telemetryOnDisplay]);
 
 	const fetchRepos = () => {
 		HostApi.instance
@@ -120,6 +138,7 @@ export function RepositoryAssociator(props: {
 				if (!_isEmpty(derivedState.relatedRepos)) {
 					filteredResults = results.filter(_ => {
 						return derivedState.relatedRepos?.some(repo => {
+							// TODO what are the actual types? there is no repo.remotes used inside the filter in the types
 							const lowercaseRepoRemotes = repo.remotes.map(remote => remote.toLowerCase());
 							const lowercaseCurrentRemote = _.remote.toLowerCase();
 							return lowercaseRepoRemotes.includes(lowercaseCurrentRemote);

@@ -326,6 +326,7 @@ const anomalyDetectionMockCompanyId = "61718eee4387f9127e6bcb3b";
 const anomalyDetectionMockRepoId = "61718ef0732aea12758207a6";
 const anomalyDetectionMockEntityGuid = "MTYwNjg2MnxBUE18QVBQTElDQVRJT058NDMxOTIyMTA";
 const anomalyDetectionMockResponseTemplate: GetObservabilityAnomaliesResponse = {
+	isMock: true,
 	responseTime: [
 		{
 			name: "WebTransaction/JSP/browse/phone.jsp",
@@ -368,6 +369,7 @@ const anomalyDetectionMockResponseTemplate: GetObservabilityAnomaliesResponse = 
 					},
 					notificationText: "Average duration (ms) +34.41% since release CS42 on $date",
 					entityName: "WebPortal",
+					scope: "WebTransaction/JSP/browse/phone.jsp",
 				},
 			],
 		},

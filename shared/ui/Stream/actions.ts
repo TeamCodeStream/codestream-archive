@@ -9,14 +9,13 @@ import {
 	CreatePostRequestType,
 	CreatePostResponse,
 	CreatePostWithMarkerRequestType,
+	CreateShareableCodeErrorRequest,
+	CreateShareableCodeErrorResponse,
 	CreateTeamTagRequestType,
 	CreateThirdPartyPostRequestType,
 	CrossPostIssueValues,
-	DeletePostRequestType,
 	DeleteTeamTagRequestType,
-	DeleteThirdPartyPostRequestType,
 	EditPostRequestType,
-	FetchCodemarksRequestType,
 	FetchPostsRequestType,
 	FetchUsersRequestType,
 	GetPostRequestType,
@@ -58,7 +57,6 @@ import { createAppAsyncThunk } from "@codestream/webview/store/helper";
 import { createReview } from "@codestream/webview/store/reviews/thunks";
 import { logError } from "../logger";
 import { CodeStreamState } from "../store";
-import { NewCodeErrorAttributes } from "../store/codeErrors/actions";
 import {
 	isLegacyNewCodemarkAttributes,
 	NewCodemarkAttributes,
@@ -93,7 +91,6 @@ import { isNotOnDisk, uriToFilePath, uuid } from "../utils";
 import { HostApi } from "../webview-api";
 import { SetUserPreferenceRequest } from "./actions.types";
 import { confirmPopup } from "./Confirm";
-import { throwIfError } from "@codestream/webview/store/common";
 import { setPostThreadsLoading } from "../store/posts/actions";
 import { codeErrorsApi } from "@codestream/webview/store/codeErrors/api/apiResolver";
 
@@ -294,11 +291,11 @@ export const createPostAndReview =
 	};
 
 export const createPostAndCodeError =
-	(attributes: NewCodeErrorAttributes, entryPoint?: PostEntryPoint) =>
-	async (dispatch, getState: () => CodeStreamState) => {
+	(request: CreateShareableCodeErrorRequest, entryPoint?: PostEntryPoint) =>
+	async (dispatch, getState: () => CodeStreamState): Promise<CreateShareableCodeErrorResponse> => {
 		return dispatch(
 			createCodeError({
-				...attributes,
+				...request,
 				entryPoint: entryPoint,
 			})
 		);
@@ -613,43 +610,6 @@ export const reactToPost =
 			return dispatch(postsActions.updatePost(response.post));
 		} catch (error) {
 			logError(error, { detail: `There was an error reacting to a post`, post, emoji, value });
-		}
-	};
-
-export const deletePost =
-	(streamId: string, postId: string, sharedTo?: ShareTarget[]) => async (dispatch, getState) => {
-		try {
-			const response = await HostApi.instance.send(DeletePostRequestType, { streamId, postId });
-			throwIfError(response);
-			const { post } = response;
-			try {
-				if (sharedTo) {
-					for (const shareTarget of sharedTo) {
-						try {
-							await HostApi.instance.send(DeleteThirdPartyPostRequestType, {
-								providerId: shareTarget.providerId,
-								channelId: shareTarget.channelId,
-								providerPostId: shareTarget.postId,
-								providerTeamId: shareTarget.teamId,
-							});
-						} catch (error) {
-							try {
-								await HostApi.instance.send(SharePostViaServerRequestType, {
-									postId,
-									providerId: shareTarget.providerId,
-								});
-							} catch (error2) {
-								logError(`Error deleting a shared post: ${error2}`);
-							}
-						}
-					}
-				}
-			} catch (error) {
-				logError(`There was an error deleting a third party shared post: ${error}`);
-			}
-			return dispatch(postsActions.deletePost(post));
-		} catch (error) {
-			logError(error, { detail: `There was an error deleting a post`, streamId, postId });
 		}
 	};
 
@@ -1026,8 +986,8 @@ export const changeStreamMuteState =
 
 export const fetchCodemarks = () => async dispatch => {
 	try {
-		const response = await HostApi.instance.send(FetchCodemarksRequestType, {});
-		if (response) dispatch(saveCodemarks(response.codemarks));
+		// const response = await HostApi.instance.send(FetchCodemarksRequestType, {});
+		// if (response) dispatch(saveCodemarks(response.codemarks));
 	} catch (error) {
 		logError(error, { detail: `failed to fetch codemarks` });
 	}

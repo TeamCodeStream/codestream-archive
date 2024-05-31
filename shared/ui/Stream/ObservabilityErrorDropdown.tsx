@@ -4,7 +4,7 @@ import { isEmpty as _isEmpty } from "lodash-es";
 import React, { useEffect, useState } from "react";
 import { shallowEqual } from "react-redux";
 import { CodeStreamState } from "../store";
-import { ErrorRow } from "./Observability";
+import { ErrorRow } from "./ErrorRow";
 import { Row } from "./CrossPostIssueControls/IssuesPane";
 import Icon from "./Icon";
 import { HostApi } from "../webview-api";
@@ -144,9 +144,7 @@ export const ObservabilityErrorDropdown = React.memo((props: Props) => {
 																relatedRepos: response?.relatedRepos || undefined,
 																timestamp: err.lastOccurrence,
 																sessionStart: derivedState.sessionStart,
-																pendingEntityId: response?.entityId || err.entityId,
 																occurrenceId: response?.occurrenceId || err.occurrenceId,
-																pendingErrorGroupGuid: err.errorGroupGuid,
 																openType: "Observability Section",
 																remote: err?.remote || undefined,
 																stackSourceMap: response?.stackSourceMap,

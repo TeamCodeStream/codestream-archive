@@ -2,9 +2,9 @@
 
 Shift left by making code performance part of the earliest stages of the development process. 
 
-- Get performance data for individual methods in the code, including notifications about poorly performing methods.
-- Get actionable information, such as errors, vulnerabilities and non-compliant SLOs, for the services built from your code.
+- See how the services built from your code are performing, with information about golden metrics, errors, transaction anomalies, SLOs, and more.
 - Investigate errors more quickly by stepping through the stack trace and collaborating with teammates.
+- See performance data for individual methods in the code, right in the editor.
 
 ### Requirements
 

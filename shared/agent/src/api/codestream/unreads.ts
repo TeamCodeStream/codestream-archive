@@ -154,97 +154,12 @@ export class CodeStreamUnreads {
 		if (!repoSettings || !repoSettings.length) return posts;
 
 		try {
-			const codemarks = (
-				await SessionContainer.instance().codemarks.get({
-					streamIds: streamIds,
-				})
-			).codemarks;
-
-			const reviews = (
-				await SessionContainer.instance().reviews.get({
-					streamIds: streamIds,
-				})
-			).reviews;
-
-			const codeErrors = (
-				await SessionContainer.instance().codeErrors.get({
-					streamIds: streamIds,
-				})
-			).codeErrors;
-
 			posts = posts
 				.filter(_ => {
 					if (_.mentionedUserIds && _.mentionedUserIds.includes(this._api.userId)) {
 						return _;
 					}
-					if (_.codemarkId) {
-						const codemark = codemarks.find(c => c.id === _.codemarkId);
-						if (codemark) {
-							if (codemark.assignees && codemark.assignees.includes(this._api.userId)) {
-								return _;
-							}
 
-							let found: any = undefined;
-							for (const repoSetting of repoSettings) {
-								const match = codemark.markers?.find(m => {
-									// there is a match if there is a path set and the file starts with the repoSetting path AND the repoIds match
-									let isPathMatch = true;
-									if (repoSetting.paths && repoSetting.paths[0] != null) {
-										isPathMatch =
-											(m.file || "").replace(/\\/g, "/").indexOf(repoSetting.paths![0]) === 0;
-									}
-									return isPathMatch && repoSetting.id === m.repoId;
-								});
-								found = match ? _ : undefined;
-								if (found) {
-									return found;
-								}
-							}
-							return found;
-						}
-					}
-					if (_.reviewId) {
-						const review = reviews.find(c => c.id === _.reviewId);
-						if (review) {
-							if (review.reviewers && review.reviewers.includes(this._api.userId)) {
-								return _;
-							}
-							let found: any = undefined;
-							for (const repoSetting of repoSettings) {
-								const match = review.reviewChangesets?.find(m => {
-									// there is a match if there is a path set and the file starts with the repoSetting path AND the repoIds match
-									let isPathMatch = true;
-									if (repoSetting.paths && repoSetting.paths[0] != null) {
-										isPathMatch = !!m.modifiedFiles.find(
-											_ => (_.file || "").replace(/\\/g, "/").indexOf(repoSetting.paths![0]) === 0
-										);
-									}
-									return isPathMatch && repoSetting.id === m.repoId;
-								});
-								found = match ? _ : undefined;
-								if (found) {
-									return found;
-								}
-							}
-							return found;
-						}
-					}
-					if (_.codeErrorId) {
-						const codeError = codeErrors.find(c => c.id === _.reviewId);
-						if (codeError) {
-							let found: any = undefined;
-							for (const repoSetting of repoSettings) {
-								const match = codeError.stackTraces?.find(m => {
-									return repoSetting.id === m.repoId;
-								});
-								found = match ? _ : undefined;
-								if (found) {
-									return found;
-								}
-							}
-							return found;
-						}
-					}
 					return undefined;
 				})
 				.filter(Boolean);
@@ -316,7 +231,6 @@ export class CodeStreamUnreads {
 						]);
 					} catch (ex) {
 						// likely an access error because user is no longer in this channel
-						debugger;
 						Logger.error(ex);
 						return;
 					}

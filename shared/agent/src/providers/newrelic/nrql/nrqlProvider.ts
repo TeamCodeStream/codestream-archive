@@ -52,7 +52,16 @@ let nrColumnsByAccountByCollectionName: NrColumnsByAccountByCollectionName = {};
 
 @lsp
 export class NrNRQLProvider {
-	static ALL_RESULT_TYPES = ["table", "json", "billboard", "line", "bar", "area", "pie"];
+	static ALL_RESULT_TYPES = [
+		"table",
+		"json",
+		"billboard",
+		"line",
+		"bar",
+		"stacked bar",
+		"area",
+		"pie",
+	];
 
 	constructor(private graphqlClient: NewRelicGraphqlClient) {}
 
@@ -83,7 +92,6 @@ export class NrNRQLProvider {
 			return {
 				accountId,
 				results: response.results,
-
 				metadata: {
 					eventType: response?.rawResponse?.metadata?.eventType,
 					since: response?.rawResponse?.metadata?.rawSince,
@@ -344,20 +352,20 @@ export class NrNRQLProvider {
 					};
 				};
 			}>(`{
-  actor {
-    accounts {
-      id
-      name
-    }
-    queryHistory {
-      nrql(options: {limit: 50}) {
-        query
-        accountIds
-        createdAt
-      }
-    }
-  }
-}`);
+				actor {
+					accounts {
+						id
+						name
+					}
+					queryHistory {
+						nrql(options: {limit: 50}) {
+							query
+							accountIds
+							createdAt
+						}
+					}
+				}
+			}`);
 
 			if (response) {
 				const accounts = response?.actor?.accounts || [];
@@ -470,8 +478,8 @@ export class NrNRQLProvider {
 		const isTimeseries = metadata?.timeSeries || metadata?.contents?.timeSeries;
 		const isFacet = metadata?.facet;
 		if (isTimeseries && isFacet) {
-			// TODO stacked bar and line and area
-			return { selected: "line", enabled: ["table", "json", "line"] };
+			// TODO add area
+			return { selected: "line", enabled: ["table", "json", "line", "stackedBar"] };
 		}
 
 		if (isTimeseries) {

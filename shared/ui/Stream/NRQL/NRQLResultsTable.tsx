@@ -5,9 +5,10 @@ import copy from "copy-to-clipboard";
 import Icon from "../Icon";
 import Tooltip from "../Tooltip";
 import { isEmpty as _isEmpty } from "lodash-es";
+import { validateAndConvertUnixTimestamp } from "./utils";
 
-const MIN_COL_WIDTH = 140;
-const MAX_COL_WIDTH = 400;
+const MIN_COL_WIDTH = 200;
+const MAX_COL_WIDTH = 450;
 const MIN_ROW_HEIGHT = 100;
 
 const cellStyle = {
@@ -43,17 +44,23 @@ export const NRQLResultsTable = (props: Props) => {
 
 	const Cell = ({ columnIndex, rowIndex, style }) => {
 		const rowArray = Object.values(gridData.resultsWithHeaders[rowIndex]);
-		let value: string;
-		if (typeof rowArray[columnIndex] === "string") {
-			value = rowArray[columnIndex] as string;
-		} else {
-			value = String(rowArray[columnIndex]);
-		}
 
-		//@TODO - for later use, columnName will be "timestamp" or "name", etc.
-		// const columnNames = Object.keys(gridData.resultsWithHeaders[rowIndex]);
-		// const columnName = columnNames[columnIndex];
-		// console.warn("columnName", columnName);
+		const columnNames = Object.keys(gridData.resultsWithHeaders[rowIndex]);
+		const columnName = columnNames[columnIndex];
+		let value: string | number;
+		const cellValue = rowArray[columnIndex];
+
+		if (columnName.includes("timestamp")) {
+			if (typeof cellValue === "number") {
+				value = validateAndConvertUnixTimestamp(cellValue);
+			} else {
+				value = String(cellValue);
+			}
+		} else if (typeof cellValue === "string") {
+			value = cellValue;
+		} else {
+			value = String(cellValue);
+		}
 
 		return (
 			<div
@@ -166,12 +173,27 @@ export const NRQLResultsTable = (props: Props) => {
 	};
 
 	const calculateColumnWidths = (firstRowResults: { [key: string]: string | number }) => {
-		return Object.entries(firstRowResults).map(([key, value]) => {
+		let columnWidths = Object.entries(firstRowResults).map(([key, value]) => {
 			const keyValue = typeof key === "string" ? key : String(key);
 			const valueString = typeof value === "string" ? value : String(value);
 			const columnToPass = keyValue.length > valueString.length ? keyValue : valueString;
 			return calculateColumnWidth(columnToPass);
 		});
+
+		const sumColumnWidths = columnWidths.reduce((accumulator, currentValue) => {
+			return accumulator + currentValue;
+		}, 0);
+
+		if (sumColumnWidths < Number(props.width)) {
+			const targetWidth = Number(props.width) - 10;
+			const difference = targetWidth - sumColumnWidths;
+			const numberOfColumns = columnWidths.length;
+			const addToEach = difference / numberOfColumns;
+
+			columnWidths = columnWidths.map(width => width + addToEach);
+		}
+
+		return columnWidths;
 	};
 
 	const generateGridData = results => {

@@ -1,5 +1,23 @@
 # Change Log
 
+## [15.9.0] - 2024-6-3
+
+### Added
+
+- Adds support for stacked bar charts for query results
+
+### Changed
+
+- Queries can now be submitted via the Enter key, with Shift+Enter creating a newline
+- Details for transaction anomalies are now displayed in a new webview in the editor group, with relevant errors, critical path analysis or database queries included as appropriate
+- Desktop notifications for transaction anomalies have been turned off, with new email notifications coming soon
+
+### Fixed
+
+- Fixes an issue rendering query results as pie charts 
+- Fixes an issue with labels missing from bar charts
+- Fixes an issue where adding TIMESERIES to a query generated a table by default instead of a line chart
+
 ## [15.8.1] - 2024-5-9
 
 ### Fixed

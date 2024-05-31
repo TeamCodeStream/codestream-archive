@@ -1,8 +1,7 @@
-import { Container, SessionContainer } from "../../container";
+import { SessionContainer } from "../../container";
 import {
 	Comparison,
 	DetectionMethod,
-	DidDetectObservabilityAnomaliesNotificationType,
 	EntityAccount,
 	GetObservabilityAnomaliesRequest,
 	GetObservabilityAnomaliesResponse,
@@ -54,7 +53,14 @@ export class AnomalyDetectorDrillDown {
 			await this.notifyNewAnomalies(mockResponse.responseTime, mockResponse.errorRate, true);
 			return mockResponse;
 		}
+		return {
+			responseTime: [],
+			errorRate: [],
+			didNotifyNewAnomalies: false,
+		};
+	}
 
+	async _execute(): Promise<GetObservabilityAnomaliesResponse | undefined> {
 		const entityAccount = await this.getEntityAccount();
 		const languageSupport = entityAccount && (await getLanguageSupport(entityAccount));
 		if (!languageSupport) {
@@ -180,7 +186,7 @@ export class AnomalyDetectorDrillDown {
 				languageSupport,
 				benchmarkSpans,
 				scope,
-				this._request.minimumErrorRate,
+				this._request.minimumErrorPercentage,
 				this._request.minimumSampleRate,
 				this._request.minimumRatio
 			);
@@ -624,32 +630,33 @@ export class AnomalyDetectorDrillDown {
 			anomaly.notificationText = "Errors (per minute) " + text;
 			anomaly.entityName = entityAccount?.entityName || "";
 		}
-		for (const anomaly of durationAnomalies) {
-			const counterpart = errorRateAnomalies.find(
-				_ =>
-					_.codeAttrs?.codeNamespace === anomaly.codeAttrs?.codeNamespace &&
-					_.codeAttrs?.codeFunction === anomaly.codeAttrs?.codeFunction
-			);
-			if (counterpart) {
-				anomaly.chartHeaderTexts = {
-					...anomaly.chartHeaderTexts,
-					...counterpart.chartHeaderTexts,
-				};
-			}
-		}
-		for (const anomaly of errorRateAnomalies) {
-			const counterpart = durationAnomalies.find(
-				_ =>
-					_.codeAttrs?.codeNamespace === anomaly.codeAttrs?.codeNamespace &&
-					_.codeAttrs?.codeFunction === anomaly.codeAttrs?.codeFunction
-			);
-			if (counterpart) {
-				anomaly.chartHeaderTexts = {
-					...anomaly.chartHeaderTexts,
-					...counterpart.chartHeaderTexts,
-				};
-			}
-		}
+		// FIXME can't be used, many unrelated metrics coalesce to the same code attrs. eg prepared statements
+		// for (const anomaly of durationAnomalies) {
+		// 	const counterpart = errorRateAnomalies.find(
+		// 		_ =>
+		// 			_.codeAttrs?.codeNamespace === anomaly.codeAttrs?.codeNamespace &&
+		// 			_.codeAttrs?.codeFunction === anomaly.codeAttrs?.codeFunction
+		// 	);
+		// 	if (counterpart) {
+		// 		anomaly.chartHeaderTexts = {
+		// 			...anomaly.chartHeaderTexts,
+		// 			...counterpart.chartHeaderTexts,
+		// 		};
+		// 	}
+		// }
+		// for (const anomaly of errorRateAnomalies) {
+		// 	const counterpart = durationAnomalies.find(
+		// 		_ =>
+		// 			_.codeAttrs?.codeNamespace === anomaly.codeAttrs?.codeNamespace &&
+		// 			_.codeAttrs?.codeFunction === anomaly.codeAttrs?.codeFunction
+		// 	);
+		// 	if (counterpart) {
+		// 		anomaly.chartHeaderTexts = {
+		// 			...anomaly.chartHeaderTexts,
+		// 			...counterpart.chartHeaderTexts,
+		// 		};
+		// 	}
+		// }
 	}
 
 	private _observabilityRepo: ObservabilityRepo | undefined;
@@ -735,11 +742,11 @@ export class AnomalyDetectorDrillDown {
 		await storage.flush();
 
 		if (newDurationAnomalies.length || newErrorRateAnomalies.length) {
-			Container.instance().agent.sendNotification(DidDetectObservabilityAnomaliesNotificationType, {
-				entityGuid: entityGuid,
-				duration: newDurationAnomalies,
-				errorRate: newErrorRateAnomalies,
-			});
+			// Container.instance().agent.sendNotification(DidDetectObservabilityAnomaliesNotificationType, {
+			// 	entityGuid: entityGuid,
+			// 	duration: newDurationAnomalies,
+			// 	errorRate: newErrorRateAnomalies,
+			// });
 			return true;
 		}
 

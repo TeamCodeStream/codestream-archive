@@ -1161,6 +1161,24 @@ export interface GetNewRelicErrorGroupRequest {
 	timestamp?: number;
 }
 
+export interface GetNewRelicErrorGroupResponse {
+	errorGroup?: NewRelicErrorGroup;
+	accountId: number;
+	error?: {
+		message: string;
+		details?: {
+			settings?: { key: string; value: any }[];
+		};
+	};
+}
+
+export const GetNewRelicErrorGroupRequestType = new RequestType<
+	GetNewRelicErrorGroupRequest,
+	GetNewRelicErrorGroupResponse,
+	void,
+	void
+>("codestream/newrelic/errorGroup");
+
 export interface GetNewRelicRelatedEntitiesRequest {
 	entityGuid: string;
 	direction: string;
@@ -1243,17 +1261,6 @@ export interface NewRelicErrorGroup {
 	releaseTag?: string;
 }
 
-export interface GetNewRelicErrorGroupResponse {
-	errorGroup?: NewRelicErrorGroup;
-	accountId: number;
-	error?: {
-		message: string;
-		details?: {
-			settings?: { key: string; value: any }[] | undefined;
-		};
-	};
-}
-
 export interface GetNewRelicRelatedEntitiesResponse extends Array<RelatedEntityByType> {
 	error?: {
 		message: string;
@@ -1264,13 +1271,6 @@ export interface GetNewRelicRelatedEntitiesResponse extends Array<RelatedEntityB
 export interface GetNewRelicUrlResponse {
 	newRelicUrl: string;
 }
-
-export const GetNewRelicErrorGroupRequestType = new RequestType<
-	GetNewRelicErrorGroupRequest,
-	GetNewRelicErrorGroupResponse,
-	void,
-	void
->("codestream/newrelic/errorGroup");
 
 export const GetNewRelicRelatedEntitiesRequestType = new RequestType<
 	GetNewRelicRelatedEntitiesRequest,
@@ -1410,7 +1410,7 @@ export interface GetObservabilityAnomaliesRequest {
 	sinceDaysAgo: number;
 	baselineDays: number;
 	sinceLastRelease: boolean;
-	minimumErrorRate: number;
+	minimumErrorPercentage: number;
 	minimumResponseTime: number;
 	minimumSampleRate: number;
 	minimumRatio: number;
@@ -1437,6 +1437,13 @@ export interface ObservabilityAnomaly {
 	};
 	notificationText: string;
 	entityName: string;
+}
+
+export interface EntityObservabilityAnomalies {
+	entityGuid: string;
+	durationAnomalies: ObservabilityAnomaly[];
+	errorRateAnomalies: ObservabilityAnomaly[];
+	detectionMethod?: DetectionMethod;
 }
 
 export type DetectionMethod = "Release Based" | "Time Based";
@@ -1473,6 +1480,7 @@ export interface GetObservabilityAnomaliesResponse {
 	error?: string;
 	isSupported?: boolean;
 	didNotifyNewAnomalies: boolean;
+	isMock?: boolean;
 }
 
 export const GetObservabilityAnomaliesRequestType = new RequestType<
@@ -1887,6 +1895,7 @@ export interface GetMethodLevelTelemetryResponse {
 	deployments?: Deployment[];
 	criticalPath?: CriticalPathSpan[];
 	errors?: ObservabilityError[];
+	slowestQueries?: DbQuery[];
 	newRelicAlertSeverity?: string;
 	newRelicEntityAccounts: EntityAccount[];
 	newRelicEntityName: string;
@@ -1971,6 +1980,11 @@ export const GetSpanChartDataRequestType = new RequestType<
 
 export interface CriticalPathSpan {
 	name: string;
+	duration: number;
+}
+
+export interface DbQuery {
+	statement: string;
 	duration: number;
 }
 

@@ -110,6 +110,7 @@ export interface CodeStreamEnvironmentInfo {
 	newRelicLandingServiceUrl?: string;
 	newRelicApiUrl?: string;
 	newRelicSecApiUrl?: string;
+	o11yServerUrl?: string;
 	telemetryEndpoint?: string;
 	environmentHosts?: EnvironmentHost[];
 }
@@ -202,6 +203,7 @@ export interface VerifyConnectivityResponse {
 	newRelicLandingServiceUrl?: string;
 	newRelicApiUrl?: string;
 	newRelicSecApiUrl?: string;
+	o11yServerUrl?: string;
 	telemetryEndpoint?: string;
 	environmentHosts?: EnvironmentHost[];
 }
@@ -323,6 +325,7 @@ export type TelemetryEventName =
 	| "codestream/o11y_fetch failed"
 	| "codestream/related_service_link clicked"
 	| "codestream/repo_association succeeded"
+	| "codestream/repo_association_modal displayed"
 	| "codestream/repo_disambiguation succeeded"
 	| "codestream/service displayed"
 	| "codestream/sign_in page_viewed"

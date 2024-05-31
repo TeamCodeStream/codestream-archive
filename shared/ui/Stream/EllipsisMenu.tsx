@@ -259,28 +259,6 @@ export function EllipsisMenu(props: EllipsisMenuProps) {
 		dispatch(logout());
 	};
 
-	const buildAdminTeamMenuItem = () => {
-		const { company, team, currentUserId, currentUserEmail } = derivedState;
-		const { adminIds } = team;
-
-		if (adminIds && adminIds.includes(currentUserId!)) {
-			const submenu = [
-				{
-					label: "Export Data",
-					key: "export-data",
-					action: () => go(WebviewPanels.Export),
-					disabled: false,
-				},
-			];
-
-			return {
-				label: "Organization Admin",
-				key: "admin",
-				submenu,
-			};
-		} else return null;
-	};
-
 	const menuItems = [] as any;
 
 	interface SubmenuOption {
@@ -319,11 +297,11 @@ export function EllipsisMenu(props: EllipsisMenuProps) {
 				{ label: "-" },
 				{ label: "Sign Out", action: () => dispatch(logout()) },
 			],
-		},
-		{
-			label: "Notifications",
-			action: () => dispatch(openModal(WebviewModals.Notifications)),
 		}
+		// {
+		// 	label: "Notifications",
+		// 	action: () => dispatch(openModal(WebviewModals.Notifications)),
+		// }
 	);
 
 	menuItems.push(
@@ -342,26 +320,12 @@ export function EllipsisMenu(props: EllipsisMenuProps) {
 				noHover: true,
 				disabled: true,
 			},
-			// {
-			// 	label: `Invite people to ${derivedState.team.name}`,
-			// 	action: () => dispatch(openModal(WebviewModals.Invite))
-			// },
-			buildAdminTeamMenuItem(),
+
 			buildSwitchTeamMenuItem(),
 			{ label: "-" },
 		].filter(Boolean)
 	);
 
-	// Feedback:
-	// - Email support
-	// - Tweet your feedback
-	//
-	// help:
-	// - Documentation
-	// - Video Library
-	// - Report an Issue
-	// - Keybindings
-	// - FAQ
 	menuItems.push(
 		{
 			label: "Help",
@@ -406,20 +370,6 @@ export function EllipsisMenu(props: EllipsisMenuProps) {
 		{ label: "-" }
 	);
 
-	// if (
-	// 	derivedState.currentUserEmail &&
-	// 	derivedState.currentUserEmail.indexOf("@codestream.com") > -1
-	// ) {
-	// 	menuItems[menuItems.length - 2].submenu.push({
-	// 		label: "Tester",
-	// 		key: "tester",
-	// 		action: () => dispatch(openPanel(WebviewPanels.Tester))
-	// 	});
-	// }
-
-	// menuItems.push({ label: "Sign Out", action: "signout" });
-
-	// menuItems.push({ label: "-" });
 	let versionStatement = `This is CodeStream version ${derivedState.pluginVersion}`;
 	if (!derivedState.isProductionCloud || derivedState.hasMultipleEnvironments) {
 		versionStatement += ` (${derivedState.environment.toLocaleUpperCase()})`;
