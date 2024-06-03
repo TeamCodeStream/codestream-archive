@@ -831,8 +831,16 @@ export class GitService implements IGitService, Disposable {
 	private async _getRepoRemotes(repoPath: string) {
 		try {
 			const data = await git({ cwd: repoPath }, "remote", "-v");
-			return await GitRemoteParser.parse(data, repoPath);
-		} catch {
+			if (!data) {
+				throw new Error("No data returned from git remote command");
+			}
+			let parsedData = await GitRemoteParser.parse(data, repoPath);
+			if (!parsedData) {
+				throw new Error("Failed to parse remote data");
+			}
+			return parsedData;
+		} catch (error) {
+			Logger.error(error);
 			return [];
 		}
 	}
