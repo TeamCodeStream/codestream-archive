@@ -27,6 +27,7 @@ import wait = Functions.wait;
 import { AnomalyDetectorDrillDown } from "../anomalyDetectionDrillDown";
 import { FetchCore } from "../../../system/fetchCore";
 import { tokenHolder } from "../TokenHolder";
+import { getAnomalyDetectionMockResponse } from "../anomalyDetectionMockResults";
 
 @lsp
 export class AnomaliesProvider implements Disposable {
@@ -60,7 +61,8 @@ export class AnomaliesProvider implements Disposable {
 	}
 
 	getLastObservabilityAnomaliesResponse(entityGuid: string) {
-		//return this._lastObservabilityAnomaliesResponse.get(entityGuid);
+		const mockResponse = getAnomalyDetectionMockResponse(entityGuid);
+		if (mockResponse) return mockResponse;
 		const result = SessionContainer.instance().session.getCachedAnomalyData(entityGuid);
 		return (
 			result && {

@@ -85,13 +85,6 @@ export const ObservabilityAnomaliesGroup = React.memo((props: Props) => {
 					? "error_rate"
 					: ""
 			}`,
-			meta_data_4: `detection_method: ${
-				props.detectionMethod === "Release Based"
-					? "release_based"
-					: props.detectionMethod === "Time Based"
-					? "time_based"
-					: "<unknown>"
-			}`,
 			meta_data_3: `language: ${props.observabilityAnomalies[0]?.language ?? "<unknown>"}`,
 			meta_data_5: `anomaly_prefix: ${anomaly.name.split("/")[0]}`,
 			event_type: "click",

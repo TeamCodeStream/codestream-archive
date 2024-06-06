@@ -100,6 +100,14 @@ AND status = 'baz'
 */`);
 		expect(result).toBe("");
 	});
+
+	it("treat single-quoted slashes as string literals and not remove them", () => {
+		const result = provider.transformQuery(`FROM Collection
+SELECT foo
+WHERE url = 'https://www.google.com/'`);
+
+		expect(result).toBe(`FROM Collection SELECT foo WHERE url = 'https://www.google.com/'`);
+	});
 });
 
 describe("getResultsType", () => {

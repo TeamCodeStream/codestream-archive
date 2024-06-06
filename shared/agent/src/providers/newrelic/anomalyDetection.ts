@@ -49,7 +49,7 @@ export class AnomalyDetector {
 	private _releaseBased = false;
 
 	async execute(): Promise<GetObservabilityAnomaliesResponse> {
-		const mockResponse = getAnomalyDetectionMockResponse(this._request);
+		const mockResponse = getAnomalyDetectionMockResponse(this._request.entityGuid);
 		if (mockResponse) {
 			await this.notifyNewAnomalies(mockResponse.responseTime, mockResponse.errorRate, true);
 			return mockResponse;

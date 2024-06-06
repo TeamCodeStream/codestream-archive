@@ -1,6 +1,6 @@
 # Change Log
 
-## [15.9.0] - 2024-6-3
+## [15.9.0] - 2024-6-6
 
 ### Added
 
@@ -15,6 +15,7 @@
 
 - Fixes an issue rendering query results as pie charts 
 - Fixes an issue with labels missing from bar charts
+- Fixes an issue with slashes in queries not being properly escaped
 - Fixes an issue where adding TIMESERIES to a query generated a table by default instead of a line chart
 
 ## [15.8.1] - 2024-5-9

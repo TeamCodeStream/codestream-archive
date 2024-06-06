@@ -2,16 +2,15 @@ import {
 	CriticalPathSpan,
 	GetMethodLevelTelemetryRequest,
 	GetMethodLevelTelemetryResponse,
-	GetObservabilityAnomaliesRequest,
 	GetObservabilityAnomaliesResponse,
 	MethodGoldenMetrics,
 	ObservabilityError,
 } from "@codestream/protocols/agent";
 
 export const getAnomalyDetectionMockResponse = (
-	request: GetObservabilityAnomaliesRequest
+	entityGuid: string
 ): GetObservabilityAnomaliesResponse | undefined => {
-	if (request.entityGuid === anomalyDetectionMockEntityGuid) {
+	if (entityGuid === anomalyDetectionMockEntityGuid) {
 		return recursivelyReplaceTemplates(
 			anomalyDetectionMockResponseTemplate
 		) as GetObservabilityAnomaliesResponse;
