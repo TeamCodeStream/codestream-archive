@@ -29,7 +29,7 @@ on:
       - '.github/workflows/vscode-build.yml'
 
 jobs:
-  VSCode-Build:     
+  VSCode:     
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -67,11 +67,10 @@ jobs:
         cd ../ui
         npm run verify:compile
 
-# need NPM scripts that don't use pushd/popd
-#    - name: Test VSCode
-#      run: |
-#        cd ./vscode
-#        npm run vscode:test
+    - name: Test VSCode
+      run: |
+        cd ./vscode
+        npm run vscode:test
 #        cd ../shared/agent
 #        npm run test-unit
 #        cd ../ui
