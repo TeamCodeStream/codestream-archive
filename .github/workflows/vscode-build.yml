@@ -47,11 +47,11 @@ jobs:
 
     - name: NPM Install
       run: |
-        cd ./shared/ui
-        npm install --no-save --ignore-scripts
-        cd ../util
+        cd ./shared/util
         npm install --no-save --ignore-scripts
         cd ../build
+        npm install --no-save --ignore-scripts
+        cd ../ui
         npm install --no-save --ignore-scripts
         cd ../agent
         npm install --no-save --ignore-scripts
@@ -60,31 +60,32 @@ jobs:
         
     - name: Compile & Verify
       run: |
-        cd ./vscode
+        cd ./shared/ui
+        npm run verify:compile  
+        cd ../agent
         npm run verify:compile
-        cd ../shared/agent
-        npm run verify:compile
-        cd ../ui
+        cd ../../vscode
         npm run verify:compile
 
-    - name: Test VSCode
+    - name: Run Tests
       run: |
-        cd ./vscode
+        cd ./shared/build
+        npm run test
+        cd ../util
+        npm run test
+        cd ../agent
+        npm run test:ci:unit
+        cd ../ui
+        npm run test:ci
+        cd ../../vscode
         npm run vscode:test
-#        cd ../shared/agent
-#        npm run test-unit
-#        cd ../ui
-#        npm run test:ci
-
-    - name: Build Agent
+#       
+    - name: Build Assets
       run: |
         cd ./shared/agent
         npm run build
-
-    - name: Build VSCode
-      run: |
-        cd ./vscode
-        npm run build        
+        cd ../../vscode
+        npm run build
         
     - name: Pack It Up
       run: |
@@ -92,7 +93,7 @@ jobs:
         npm run pack
         mv codestream-*.vsix codestream-${{ steps.package_version.outputs.version }}-${{ github.run_number }}.vsix
 
-    - name: Upload a Build Artifact
+    - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4.3.3
       with:
         name: vscode-codestream-${{ steps.package_version.outputs.version }}-${{ github.run_number }}
