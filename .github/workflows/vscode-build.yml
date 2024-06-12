@@ -2,14 +2,44 @@ name: 'VSCode Build'
   
 on:
   workflow_dispatch:
- 
+  push:
+    branches:
+      - develop
+      - master
+      - feature/*
+      - hotfix/*
+    paths:
+      - 'vscode/**'
+      - 'shared/**'
+      - 'util/**'
+      - 'build/**'
+      - 'agent/**'
+      - '.github/workflows/vscode-build.yml'
+  pull_request:
+    types: [opened, reopened]
+    branches:
+      - develop
+      - master
+    paths:
+      - 'vscode/**'
+      - 'shared/**'
+      - 'util/**'
+      - 'build/**'
+      - 'agent/**'
+      - '.github/workflows/vscode-build.yml'
+
 jobs:
   VSCode-Build:     
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
 
+    - name: Read package.json
+      id: package_version  
+      uses: zvonimirsun/read-package-version-actions@v2
+      with: 
+        path: ./vscode
+      
     - name: Setup Node.js environment
       uses: actions/setup-node@v4.0.2
       with:
@@ -61,9 +91,10 @@ jobs:
       run: |
         cd ./vscode
         npm run pack
+        mv codestream-*.vsix codestream-${{ steps.package_version.outputs.version }}-${{ github.run_number }}.vsix
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4.3.3
       with:
+        name: vscode-codestream-${{ steps.package_version.outputs.version }}-${{ github.run_number }}
         path: ./vscode/codestream-*.vsix
-    
