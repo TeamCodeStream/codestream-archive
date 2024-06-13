@@ -44,7 +44,8 @@ jobs:
       uses: actions/setup-node@v4.0.2
       with:
         node-version: 18.5.0
-
+        cache: 'npm'
+        
     - name: NPM Install
       run: |
         cd ./shared/util
