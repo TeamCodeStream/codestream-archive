@@ -95,21 +95,21 @@ jobs:
       uses: zgosalvez/github-actions-report-lcov@v3
       if: steps.test_run.conclusion == 'success'
       with:
-        coverage-files: './coverage/lcov.info'
+        coverage-files: coverage/lcov.info
         minimum-coverage: 0
-        working-directory: './vscode'
+        working-directory: vscode
         artifact-name: vscode-code-coverage-report
         update-comment: true
 
-    - name: Agent Code Coverage Report
-      uses: zgosalvez/github-actions-report-lcov@v3
-      if: steps.test_run.conclusion == 'success'
-      with:
-        coverage-files: './coverage/lcov.info'
-        minimum-coverage: 0
-        working-directory: './shared/agent'
-        artifact-name: vagent-code-coverage-report
-        update-comment: true
+    # - name: Agent Code Coverage Report
+    #   uses: zgosalvez/github-actions-report-lcov@v3
+    #   if: steps.test_run.conclusion == 'success'
+    #   with:
+    #     coverage-files: './coverage/lcov.info'
+    #     minimum-coverage: 0
+    #     working-directory: './shared/agent'
+    #     artifact-name: vagent-code-coverage-report
+    #     update-comment: true
 
     - name: Build Assets
       run: |
