@@ -50,15 +50,15 @@ jobs:
     - name: NPM Install
       run: |
         cd ./shared/util
-        npm install --no-save --ignore-scripts
+        npm ci --ignore-scripts
         cd ../build
-        npm install --no-save --ignore-scripts
+        npm ci --ignore-scripts
         cd ../ui
-        npm install --no-save --ignore-scripts
+        npm ci --ignore-scripts
         cd ../agent
-        npm install --no-save --ignore-scripts
+        npm ci --ignore-scripts
         cd ../../vscode
-        npm install --no-save --ignore-scripts
+        npm ci --ignore-scripts
         
     - name: Compile & Verify
       run: |
@@ -70,6 +70,7 @@ jobs:
         npm run verify:compile
 
     - name: Run Tests
+      id: test_run
       run: |
         cd ./shared/build
         npm run test:ci
@@ -84,18 +85,30 @@ jobs:
 
     - name: Test Report
       uses: dorny/test-reporter@v1
-      if: success() || failure()
+      if: steps.test_run.conclusion == 'success' || steps.test_run.conclusion == 'failure'
       with:
         name: Test Reports
         path: '**/junit.xml'
         reporter: jest-junit
 
-    - name: Code Coverage Report
+    - name: VSCode Code Coverage Report
       uses: zgosalvez/github-actions-report-lcov@v3
+      if: steps.test_run.conclusion == 'success'
       with:
-        coverage-files: '**/coverage/lcov.info'
+        coverage-files: './coverage/lcov.info'
         minimum-coverage: 0
-        artifact-name: code-coverage-report
+        working-directory: './vscode'
+        artifact-name: vscode-code-coverage-report
+        update-comment: true
+
+    - name: Agent Code Coverage Report
+      uses: zgosalvez/github-actions-report-lcov@v3
+      if: steps.test_run.conclusion == 'success'
+      with:
+        coverage-files: './coverage/lcov.info'
+        minimum-coverage: 0
+        working-directory: './shared/agent'
+        artifact-name: vagent-code-coverage-report
         update-comment: true
 
     - name: Build Assets
