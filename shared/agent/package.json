@@ -139,7 +139,7 @@
 		"fs-extra": "11.2.0",
 		"graphql-tag": "2.12.6",
 		"husky": "8.0.3",
-		"jest-junit": "^16.0.0",
+		"jest-junit": "16.0.0",
 		"jest-mock-extended": "3.0.7",
 		"jest-teamcity": "1.11.0",
 		"lint-staged": "13.2.3",
