@@ -79,7 +79,15 @@ jobs:
         npm run test:ci
         cd ../../vscode
         npm run vscode:test
-#       
+
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: JEST Tests
+        path: junit.xml
+        reporter: jest-junit
+
     - name: Build Assets
       run: |
         cd ./shared/agent
