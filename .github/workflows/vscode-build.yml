@@ -45,7 +45,7 @@ jobs:
       with:
         node-version: 18.5.0
         cache: 'npm'
-        
+
     - name: NPM Install
       run: |
         cd ./shared/util
@@ -71,15 +71,15 @@ jobs:
     - name: Run Tests
       run: |
         cd ./shared/build
-        npm run test
+        npm run test:ci
         cd ../util
-        npm run test
+        npm run test:ci
         cd ../agent
         npm run test:ci:unit
         cd ../ui
         npm run test:ci
         cd ../../vscode
-        npm run vscode:test
+        npm run test:ci
 
     - name: Test Report
       uses: dorny/test-reporter@v1

@@ -20,7 +20,7 @@
 	"scripts": {
 		"postinstall": "patch-package",
 		"test": "npx jest --forceExit --testPathPattern=\"test\\/.*\\.spec\\.ts$\"",
-		"test:ci": "npx jest --ci --reporters=default --reporters=jest-junit --testPathPattern=\"test\\/.*\\.spec\\.ts$\""
+		"test:ci": "npx jest --ci --reporters=default --reporters=jest-junit --testPathPattern=\"test\\/.*\\.spec\\.ts$\" --coverage"
 	},
 	"devDependencies": {
 		"@luckycatfactory/esbuild-graphql-loader": "3.8.1",

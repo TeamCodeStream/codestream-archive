@@ -8,7 +8,7 @@
 		"clean:ci": "git clean -xdf",
 		"coverage": "jest --forceExit --coverage",
 		"test": "jest --forceExit --testEnvironment jsdom",
-		"test:ci": "npx jest --ci --reporters=default --reporters=jest-junit --testEnvironment jsdom",
+		"test:ci": "npx jest --ci --reporters=default --reporters=jest-junit --testEnvironment jsdom --coverage",
 		"test:watch": "jest --testEnvironment jsdom --watch",
 		"verify": "run-p verify:**",
 		"verify:compile": "npx tsc --noEmit",
