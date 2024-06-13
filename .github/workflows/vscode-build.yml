@@ -46,7 +46,6 @@ jobs:
       uses: actions/setup-node@v4.0.2
       with:
         node-version: 18.5.0
-        cache: 'npm'
 
     - name: NPM Install
       run: |
@@ -134,7 +133,7 @@ jobs:
 
     #   There are no tests that result in coverage being reported, so this action will fail when it
     #   tries to parse the lcov.info file.  We should add tests that result in coverage being reported!
-        
+
     # - name: VSCode Code Coverage Report
     #   uses: kefasjw/lcov-pull-request-report@v1
     #   if: steps.test_run.conclusion == 'success'
