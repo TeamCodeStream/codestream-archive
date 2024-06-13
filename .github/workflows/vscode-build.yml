@@ -16,7 +16,7 @@ on:
       - 'agent/**'
       - '.github/workflows/vscode-build.yml'
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, synchronize]
     branches:
       - develop
       - master
@@ -31,6 +31,9 @@ on:
 jobs:
   VSCode:     
     runs-on: ubuntu-latest
+
+    permissions: write-all
+
     steps:
     - uses: actions/checkout@v4
     - uses: hrishikesh-kadam/setup-lcov@v1
@@ -50,15 +53,15 @@ jobs:
     - name: NPM Install
       run: |
         cd ./shared/util
-        npm ci --ignore-scripts
+        npm install --no-save --ignore-scripts
         cd ../build
-        npm ci --ignore-scripts
+        npm install --no-save --ignore-scripts
         cd ../ui
-        npm ci --ignore-scripts
+        npm install --no-save --ignore-scripts
         cd ../agent
-        npm ci --ignore-scripts
+        npm install --no-save --ignore-scripts
         cd ../../vscode
-        npm ci --ignore-scripts
+        npm install --no-save --ignore-scripts
         
     - name: Compile & Verify
       run: |
@@ -91,26 +94,56 @@ jobs:
         path: '**/junit.xml'
         reporter: jest-junit
 
-    - name: VSCode Code Coverage Report
-      uses: zgosalvez/github-actions-report-lcov@v3
+    - name: Share/Agent Code Coverage Report
+      uses: kefasjw/lcov-pull-request-report@v1
       if: steps.test_run.conclusion == 'success'
       with:
-        coverage-files: coverage/lcov.info
-        minimum-coverage: 0
+        lcov-file: shared/agent/coverage/lcov.info
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: shared/agent
+        changed-files-minimum-coverage: 0
+        comment-title: Agent Code Coverage Report
+
+    - name: Shared/UI Code Coverage Report
+      uses: kefasjw/lcov-pull-request-report@v1
+      if: steps.test_run.conclusion == 'success'
+      with:
+        lcov-file: shared/ui/coverage/lcov.info
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: shared/ui
+        changed-files-minimum-coverage: 0
+        comment-title: Shared/UI Code Coverage Report
+
+    - name: Shared/Util Code Coverage Report
+      uses: kefasjw/lcov-pull-request-report@v1
+      if: steps.test_run.conclusion == 'success'
+      with:
+        lcov-file: shared/util/coverage/lcov.info
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: shared/util
+        changed-files-minimum-coverage: 0
+        comment-title: Shared/Util Code Coverage Report
+
+    - name: Shared/Build Code Coverage Report
+      uses: kefasjw/lcov-pull-request-report@v1
+      if: steps.test_run.conclusion == 'success'
+      with:
+        lcov-file: shared/build/coverage/lcov.info
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: shared/build
+        changed-files-minimum-coverage: 0
+        comment-title: Shared/Build Code Coverage Report
+
+    - name: VSCode Code Coverage Report
+      uses: kefasjw/lcov-pull-request-report@v1
+      if: steps.test_run.conclusion == 'success'
+      with:
+        lcov-file: vscode/coverage/lcov.info
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         working-directory: vscode
-        artifact-name: vscode-code-coverage-report
-        update-comment: true
-
-    # - name: Agent Code Coverage Report
-    #   uses: zgosalvez/github-actions-report-lcov@v3
-    #   if: steps.test_run.conclusion == 'success'
-    #   with:
-    #     coverage-files: './coverage/lcov.info'
-    #     minimum-coverage: 0
-    #     working-directory: './shared/agent'
-    #     artifact-name: vagent-code-coverage-report
-    #     update-comment: true
-
+        changed-files-minimum-coverage: 0
+        comment-title: VSCode Code Coverage Report
+        
     - name: Build Assets
       run: |
         cd ./shared/agent
