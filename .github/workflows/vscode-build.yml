@@ -132,15 +132,18 @@ jobs:
         changed-files-minimum-coverage: 0
         comment-title: Shared/Build Code Coverage Report
 
-    - name: VSCode Code Coverage Report
-      uses: kefasjw/lcov-pull-request-report@v1
-      if: steps.test_run.conclusion == 'success'
-      with:
-        lcov-file: vscode/coverage/lcov.info
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        working-directory: vscode
-        changed-files-minimum-coverage: 0
-        comment-title: VSCode Code Coverage Report
+    #   There are no tests that result in coverage being reported, so this action will fail when it
+    #   tries to parse the lcov.info file.  We should add tests that result in coverage being reported!
+        
+    # - name: VSCode Code Coverage Report
+    #   uses: kefasjw/lcov-pull-request-report@v1
+    #   if: steps.test_run.conclusion == 'success'
+    #   with:
+    #     lcov-file: vscode/coverage/lcov.info
+    #     github-token: ${{ secrets.GITHUB_TOKEN }}
+    #     working-directory: vscode
+    #     changed-files-minimum-coverage: 0
+    #     comment-title: VSCode Code Coverage Report
         
     - name: Build Assets
       run: |
