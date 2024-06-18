@@ -754,23 +754,25 @@ export const Observability = React.memo((props: Props) => {
 		//dispatch(setRefreshAnomalies(false));
 
 		setCalculatingAnomalies(true);
-		// The code below will return only hard-coded mock anomalies used for demo purposes
-		const response = await HostApi.instance.send(GetObservabilityAnomaliesRequestType, {
-			entityGuid,
-			sinceDaysAgo: 1,
-			baselineDays: 1,
-			sinceLastRelease: true,
-			minimumErrorPercentage: 1,
-			minimumResponseTime: 1,
-			minimumSampleRate: 1,
-			minimumRatio: 1,
-		});
-		if (response && response.isMock) {
-			setAnomalyDetectionSupported(true);
-			setObservabilityAnomalies(response);
-			dispatch(setRefreshAnomalies(false));
-			setCalculatingAnomalies(false);
-			return;
+		if (entityGuid === "MTYwNjg2MnxBUE18QVBQTElDQVRJT058NDMxOTIyMTA") {
+			// The code below will return only hard-coded mock anomalies used for demo purposes
+			const response = await HostApi.instance.send(GetObservabilityAnomaliesRequestType, {
+				entityGuid,
+				sinceDaysAgo: 1,
+				baselineDays: 1,
+				sinceLastRelease: true,
+				minimumErrorPercentage: 1,
+				minimumResponseTime: 1,
+				minimumSampleRate: 1,
+				minimumRatio: 1,
+			});
+			if (response && response.isMock) {
+				setAnomalyDetectionSupported(true);
+				setObservabilityAnomalies(response);
+				dispatch(setRefreshAnomalies(false));
+				setCalculatingAnomalies(false);
+				return;
+			}
 		}
 
 		// The real deal

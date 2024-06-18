@@ -22,14 +22,14 @@ const codestreamOrigins = new Set([
 // forceLogout: block the request and force logout
 function getRateLimitConfig(origin: string): LimitConfig {
 	if (codestreamOrigins.has(origin)) {
-		return { limit: { warn: 100, forceLogout: 200 }, includePath: true };
+		return { limit: { warn: 100, block: 200 }, includePath: true };
 	}
 	// Uncomment for testing errors - set block to low-ish number
 	// } else if(origin.includes("github")) {
 	// 	return { warn: 30, block: 20 };
 	// }
 	else {
-		return { limit: { warn: 75, report: 100, forceLogout: 150 }, includePath: false };
+		return { limit: { warn: 75, report: 100, block: 250 }, includePath: false };
 	}
 }
 

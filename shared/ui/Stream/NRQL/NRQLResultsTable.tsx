@@ -47,7 +47,7 @@ export const NRQLResultsTable = (props: Props) => {
 
 		const columnNames = Object.keys(gridData.resultsWithHeaders[rowIndex]);
 		const columnName = columnNames[columnIndex];
-		let value: string | number;
+		let value: string;
 		const cellValue = rowArray[columnIndex];
 
 		if (columnName.includes("timestamp")) {

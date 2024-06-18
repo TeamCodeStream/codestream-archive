@@ -95,7 +95,6 @@ export class AnomaliesProvider implements Disposable {
 			const cached = await this._observabilityAnomaliesTimedCache.get(cacheKey);
 			if (cached) {
 				this._lastObservabilityAnomaliesResponse.set(request.entityGuid, cached);
-				this.agent.sendNotification(DidChangeCodelensesNotificationType, undefined);
 				return cached;
 			}
 		} catch (e) {
