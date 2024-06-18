@@ -462,6 +462,7 @@ export class NewRelicGraphqlClient implements Disposable {
 				}
 				const insufficientApiKeyError = this.getInsufficientApiKeyError(ex);
 				if (insufficientApiKeyError) {
+					Logger.error(ex, "Root cause error for ERROR_NR_INSUFFICIENT_API_KEY");
 					throw new ResponseError(ERROR_NR_INSUFFICIENT_API_KEY, "Insufficient New Relic API key");
 				}
 
@@ -586,6 +587,7 @@ export class NewRelicGraphqlClient implements Disposable {
 		}>(query, { accountId });
 		return results.actor.account.nrql;
 	}
+
 	async runNrql<T>(accountId: number, nrql: string, timeout: number = 60): Promise<T[]> {
 		const query = `query Nrql($accountId:Int!) {
 			actor {

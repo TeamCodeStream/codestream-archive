@@ -370,7 +370,7 @@ export function EllipsisMenu(props: EllipsisMenuProps) {
 		{ label: "-" }
 	);
 
-	let versionStatement = `This is CodeStream version ${derivedState.pluginVersion}`;
+	let versionStatement = `CodeStream version ${derivedState.pluginVersion}`;
 	if (!derivedState.isProductionCloud || derivedState.hasMultipleEnvironments) {
 		versionStatement += ` (${derivedState.environment.toLocaleUpperCase()})`;
 	}

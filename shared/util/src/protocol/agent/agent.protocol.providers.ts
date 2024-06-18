@@ -1359,6 +1359,18 @@ export interface GetObservabilityErrorsRequest {
 	timeWindow?: string;
 }
 
+export interface GetObservabilityErrorsWithoutReposRequest {
+	entityGuid: string;
+	accountId: number;
+	entityType: string;
+	timeWindow: string;
+}
+
+export interface GetObservabilityErrorsWithoutReposResponse {
+	repos?: ObservabilityRepoError[];
+	error?: NRErrorResponse;
+}
+
 export interface ObservabilityErrorCore {
 	entityId: string;
 	errorClass: string;
@@ -1404,6 +1416,13 @@ export const GetObservabilityErrorsRequestType = new RequestType<
 	void,
 	void
 >("codestream/newrelic/errors");
+
+export const GetObservabilityErrorsWithoutReposRequestType = new RequestType<
+	GetObservabilityErrorsWithoutReposRequest,
+	GetObservabilityErrorsWithoutReposResponse,
+	void,
+	void
+>("codestream/newrelic/errorsWithoutRepos");
 
 export interface GetObservabilityAnomaliesRequest {
 	entityGuid: string;
@@ -1546,12 +1565,15 @@ export interface EntityAccount {
 	type?: string;
 	entityTypeDescription?: string;
 	domain?: string;
+	name?: string;
+	guid?: string;
 	url?: string;
 	displayName?: string;
 	tags: {
 		key: string;
 		values: string[];
 	}[];
+	repoEntities?: RelatedRepoWithRemotes[];
 }
 
 export interface LanguageAndVersionValidation {
@@ -1571,6 +1593,10 @@ export const GetObservabilityReposRequestType = new RequestType<
 	void,
 	void
 >("codestream/newrelic/repos");
+
+export interface GetEntityAccountFromGuidRequest {
+	id: string;
+}
 
 export interface GetObservabilityEntityByGuidRequest {
 	id: string;
@@ -1810,6 +1836,7 @@ export interface GetServiceLevelTelemetryRequest {
 	skipRepoFetch?: boolean;
 	fetchRecentIssues?: boolean;
 	force?: boolean;
+	isServiceSearch?: boolean;
 }
 
 export interface UpdateAzureFullNameRequest {
@@ -2198,7 +2225,7 @@ export interface Entity {
 	goldenMetrics?: { metrics?: MethodGoldenMetrics[] };
 	guid: string;
 	name: string;
-	type?: Type;
+	type?: string;
 	entityType?: EntityType;
 	tags?: {
 		key: string;
@@ -2374,6 +2401,12 @@ export interface GetAlertViolationsQueryResult {
 			recentAlertViolations: RecentAlertViolation[];
 		};
 	};
+}
+
+export interface GetEntityFromGuid {
+	alertSeverity: string;
+	entityName: string;
+	entityGuid: string;
 }
 
 export interface GetIssuesQueryResult {
@@ -2814,6 +2847,7 @@ export interface GetNRQLResponse {
 		facet?: string[];
 		eventType?: string;
 		since?: string;
+		hasAlias: boolean;
 	};
 	error?: NRErrorResponse;
 	resultsTypeGuess?: ResultsTypeGuess;

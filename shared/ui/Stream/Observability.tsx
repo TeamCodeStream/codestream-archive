@@ -40,14 +40,10 @@ import {
 	setEntityAccounts,
 	setRefreshAnomalies,
 } from "../store/context/actions";
-import { HealthIcon } from "@codestream/webview/src/components/HealthIcon";
 import {
 	HostDidChangeWorkspaceFoldersNotificationType,
-	OpenEditorViewNotificationType,
-	OpenUrlRequestType,
 	RefreshEditorsCodeLensRequestType,
 } from "@codestream/protocols/webview";
-import { SecurityIssuesWrapper } from "@codestream/webview/Stream/SecurityIssuesWrapper";
 import { WebviewPanels } from "@codestream/protocols/api";
 import { Button } from "../src/components/Button";
 import { NoContent, PaneNode, PaneNodeName, PaneState } from "../src/components/Pane";
@@ -64,12 +60,10 @@ import {
 import { HostApi } from "../webview-api";
 import { openPanel, setUserPreference } from "./actions";
 import { ALERT_SEVERITY_COLORS } from "./CodeError/index";
-import { Row } from "./CrossPostIssueControls/IssuesPane";
 import { EntityAssociator } from "./EntityAssociator";
 import Icon from "./Icon";
 import { Link } from "./Link";
 import { ObservabilityAddAdditionalService } from "./ObservabilityAddAdditionalService";
-import { ObservabilityErrorWrapper } from "./ObservabilityErrorWrapper";
 import { WarningBox } from "./WarningBox";
 import { throwIfError } from "@codestream/webview/store/common";
 import { isFeatureEnabled } from "../store/apiVersioning/reducer";
@@ -83,13 +77,10 @@ import {
 	setApiDemoMode,
 } from "@codestream/webview/store/codeErrors/api/apiResolver";
 import { setDemoMode } from "@codestream/webview/store/codeErrors/actions";
-import { ObservabilityAnomaliesWrapper } from "@codestream/webview/Stream/ObservabilityAnomaliesWrapper";
 import { ObservabilityPreview } from "@codestream/webview/Stream/ObservabilityPreview";
-import {
-	ObservabilityLoadingServiceEntities,
-	ObservabilityLoadingServiceEntity,
-} from "@codestream/webview/Stream/ObservabilityLoading";
-import { ObservabilitySummary } from "./ObservabilitySummary";
+import { ObservabilityLoadingServiceEntities } from "@codestream/webview/Stream/ObservabilityLoading";
+import { ObservabilityServiceSearch } from "./ObservabilityServiceSearch";
+import { ObservabilityServiceEntity } from "./ObservabilityServiceEntity";
 
 interface Props {
 	paneState: PaneState;
@@ -169,7 +160,16 @@ const GenericCopy = styled.div`
 	margin: 5px 0 10px 0;
 `;
 
-const RepoHeader = styled.span`
+const SubtleRight = styled.time`
+	color: var(--text-color-subtle);
+	font-weight: normal;
+	padding-left: 5px;
+
+	&.no-padding {
+		padding-left: 0;
+	}
+`;
+export const RepoHeader = styled.span`
 	color: var(--text-color-highlight);
 	display: flex;
 	margin-left: -4px;
@@ -224,6 +224,7 @@ export const Observability = React.memo((props: Props) => {
 			demoMode: state.codeErrors.demoMode,
 			teamId: team?.id,
 			anomalyData,
+			currentServiceSearchEntity: state.context.currentServiceSearchEntity,
 		};
 	}, shallowEqual);
 
@@ -272,16 +273,11 @@ export const Observability = React.memo((props: Props) => {
 		useState<boolean>(false);
 	const [currentRepoId, setCurrentRepoId] = useMemoizedState<string | undefined>(undefined);
 	const [loadingGoldenMetrics, setLoadingGoldenMetrics] = useState<boolean>(false);
-	const [loadingServiceLevelObjectives, setLoadingServiceLevelObjectives] =
-		useState<boolean>(false);
-	const [showCodeLevelMetricsBroadcastIcon, setShowCodeLevelMetricsBroadcastIcon] =
-		useState<boolean>(false);
 	const [currentEntityAccounts, setCurrentEntityAccounts] = useState<EntityAccount[] | undefined>(
 		[]
 	);
 	const [currentObsRepo, setCurrentObsRepo] = useState<ObservabilityRepo | undefined>();
 	const [recentIssues, setRecentIssues] = useState<GetIssuesResponse | undefined>();
-	const [recentIssuesError, setRecentIssuesError] = useState<string>();
 	const previousNewRelicIsConnected = usePrevious(derivedState.newRelicIsConnected);
 	const [anomalyDetectionSupported, setAnomalyDetectionSupported] = useState<boolean>(true);
 	const [isVulnPresent, setIsVulnPresent] = useState(false);
@@ -522,7 +518,6 @@ export const Observability = React.memo((props: Props) => {
 	useInterval(
 		() => {
 			fetchGoldenMetrics(expandedEntity, true);
-			// fetchAnomalies(expandedEntity || "", currentRepoId);
 		},
 		300000,
 		true
@@ -602,37 +597,41 @@ export const Observability = React.memo((props: Props) => {
 
 	const callServiceClickedTelemetry = () => {
 		console.debug("o11y: callServiceClickedTelemetry");
-		try {
-			const currentRepoErrors = observabilityErrors?.find(_ => _ && _.repoId === currentRepoId)
-				?.errors;
-			const filteredCurrentRepoErrors = currentRepoErrors?.filter(
-				_ => _.entityId === expandedEntity
-			);
-			const filteredAssignments = observabilityAssignments?.filter(
-				_ => _.entityId === expandedEntity
-			);
+		if (expandedEntity !== derivedState.currentServiceSearchEntity) {
+			try {
+				const currentRepoErrors = observabilityErrors?.find(_ => _ && _.repoId === currentRepoId)
+					?.errors;
+				const filteredCurrentRepoErrors = currentRepoErrors?.filter(
+					_ => _.entityId === expandedEntity
+				);
+				const filteredAssignments = observabilityAssignments?.filter(
+					_ => _.entityId === expandedEntity
+				);
 
-			const entity = derivedState.observabilityRepoEntities.find(_ => _.repoId === currentRepoId);
+				const entity = derivedState.observabilityRepoEntities.find(_ => _.repoId === currentRepoId);
 
-			const account = currentEntityAccounts?.find(_ => _.entityGuid === entity?.entityGuid);
+				const account = currentEntityAccounts?.find(_ => _.entityGuid === entity?.entityGuid);
 
-			const telemetryData: TelemetryData = {
-				entity_guid: entity?.entityGuid,
-				account_id: account?.accountId,
-				meta_data: `errors_listed: ${
-					!_isEmpty(filteredCurrentRepoErrors) || !_isEmpty(filteredAssignments)
-				}`,
-				meta_data_2: `slos_listed: ${hasServiceLevelObjectives}`,
-				meta_data_3: `vulnerabilities_listed: ${isVulnPresent}`,
-				event_type: "modal_display",
-			};
+				const telemetryData: TelemetryData = {
+					entity_guid: entity?.entityGuid,
+					account_id: account?.accountId,
+					meta_data: `errors_listed: ${
+						!_isEmpty(filteredCurrentRepoErrors) || !_isEmpty(filteredAssignments)
+					}`,
+					meta_data_2: `slos_listed: ${hasServiceLevelObjectives}`,
+					meta_data_3: `vulnerabilities_listed: ${isVulnPresent}`,
+					meta_data_4: `anomalies_listed: ${!_isEmpty(observabilityAnomalies)}`,
+					meta_data_5: `entry_point: tree_view`,
+					event_type: "modal_display",
+				};
 
-			console.debug(`o11y: NR Service Clicked`, telemetryData);
+				console.debug(`o11y: NR Service Clicked`, telemetryData);
 
-			HostApi.instance.track("codestream/service displayed", telemetryData);
-			setPendingServiceClickedTelemetryCall(false);
-		} catch (ex) {
-			console.error(ex);
+				HostApi.instance.track("codestream/service displayed", telemetryData);
+				setPendingServiceClickedTelemetryCall(false);
+			} catch (ex) {
+				console.error(ex);
+			}
 		}
 	};
 
@@ -753,6 +752,7 @@ export const Observability = React.memo((props: Props) => {
 
 	const fetchAnomalies = async (entityGuid: string) => {
 		//dispatch(setRefreshAnomalies(false));
+
 		setCalculatingAnomalies(true);
 		// The code below will return only hard-coded mock anomalies used for demo purposes
 		const response = await HostApi.instance.send(GetObservabilityAnomaliesRequestType, {
@@ -812,6 +812,7 @@ export const Observability = React.memo((props: Props) => {
 				repoId: currentRepoId,
 				fetchRecentIssues: true,
 				force,
+				isServiceSearch: expandedEntity === derivedState.currentServiceSearchEntity,
 			});
 
 			if (response) {
@@ -829,7 +830,6 @@ export const Observability = React.memo((props: Props) => {
 					errors.push(response.recentIssues.error.message ?? response.recentIssues.error.type);
 				} else {
 					setRecentIssues(response.recentIssues);
-					setRecentIssuesError(undefined);
 				}
 				setEntityGoldenMetricsErrors(errors);
 			} else {
@@ -842,7 +842,6 @@ export const Observability = React.memo((props: Props) => {
 	};
 
 	const fetchServiceLevelObjectives = async (entityGuid?: string | null) => {
-		setLoadingServiceLevelObjectives(true);
 		try {
 			if (entityGuid) {
 				const response = await HostApi.instance.send(GetServiceLevelObjectivesRequestType, {
@@ -871,7 +870,6 @@ export const Observability = React.memo((props: Props) => {
 				setHasServiceLevelObjectives(false);
 			}
 		} finally {
-			setLoadingServiceLevelObjectives(false);
 		}
 	};
 
@@ -933,17 +931,19 @@ export const Observability = React.memo((props: Props) => {
 
 	// Separate useEffect to prevent duplicate requests
 	useEffect(() => {
-		if (expandedEntity && currentRepoId) {
+		if (expandedEntity) {
 			HostApi.instance.send(ServiceEntitiesViewedRequestType, {
 				teamId: derivedState.teamId,
 				entityId: expandedEntity,
 			});
-			setExpandedEntityUserPref(currentRepoId, expandedEntity);
 			fetchGoldenMetrics(expandedEntity, true);
 			fetchServiceLevelObjectives(expandedEntity);
-			fetchObservabilityErrors(expandedEntity, currentRepoId);
 			fetchAnomalies(expandedEntity);
 			handleClickCLMBroadcast(expandedEntity);
+		}
+		if (expandedEntity && currentRepoId) {
+			fetchObservabilityErrors(expandedEntity, currentRepoId);
+			setExpandedEntityUserPref(currentRepoId, expandedEntity);
 		}
 	}, [expandedEntity]);
 
@@ -1157,6 +1157,35 @@ export const Observability = React.memo((props: Props) => {
 					)}
 			</div>
 
+			<ObservabilityServiceSearch
+				anomalyDetectionSupported={anomalyDetectionSupported}
+				calculatingAnomalies={calculatingAnomalies}
+				currentRepoId={currentRepoId || ""}
+				entityGoldenMetrics={entityGoldenMetrics}
+				entityGoldenMetricsErrors={entityGoldenMetricsErrors}
+				errorInboxError={errorInboxError}
+				handleClickTopLevelService={handleClickTopLevelService}
+				hasServiceLevelObjectives={hasServiceLevelObjectives}
+				loadingGoldenMetrics={loadingGoldenMetrics}
+				loadingPane={loadingPane}
+				noErrorsAccess={noErrorsAccess}
+				observabilityAnomalies={observabilityAnomalies}
+				observabilityAssignments={observabilityAssignments}
+				observabilityErrors={observabilityErrors}
+				observabilityErrorsError={observabilityErrorsError}
+				recentIssues={recentIssues}
+				serviceLevelObjectiveError={serviceLevelObjectiveError}
+				serviceLevelObjectives={serviceLevelObjectives}
+				setIsVulnPresent={setIsVulnPresent}
+				isVulnPresent={isVulnPresent}
+				showErrors={false}
+				expandedEntity={expandedEntity}
+				setExpandedEntityCallback={setExpandedEntity}
+				setExpandedEntityUserPrefCallback={setExpandedEntityUserPref}
+				setCurrentRepoIdCallback={setCurrentRepoId}
+				doRefreshCallback={doRefresh}
+			/>
+
 			{observabilityRepos.map(repo => {
 				const repoIsCollapsed = currentRepoId !== repo.repoId;
 				const isLoadingCurrentRepo =
@@ -1208,6 +1237,10 @@ export const Observability = React.memo((props: Props) => {
 												value: repo.repoId,
 											})
 										);
+										if (repo?.entityAccounts && repo.entityAccounts.length > 0) {
+											setExpandedEntity(repo.entityAccounts[0].entityGuid);
+											setExpandedEntityUserPref(repo.repoId, repo.entityAccounts[0].entityGuid);
+										}
 										setLoadingEntities(repo.repoId);
 									}
 								}}
@@ -1328,188 +1361,37 @@ export const Observability = React.memo((props: Props) => {
 														const showErrors = ea?.domain
 															? ALLOWED_ENTITY_ACCOUNT_DOMAINS_FOR_ERRORS.includes(ea.domain)
 															: false;
+
+														const observabilityServiceEntityProps = {
+															alertSeverityColor,
+															anomalyDetectionSupported,
+															calculatingAnomalies,
+															collapsed,
+															currentRepoId,
+															ea,
+															entityGoldenMetrics,
+															entityGoldenMetricsErrors,
+															errorInboxError,
+															handleClickTopLevelService,
+															hasServiceLevelObjectives,
+															loadingGoldenMetrics,
+															loadingPane,
+															noErrorsAccess,
+															observabilityAnomalies,
+															observabilityAssignments,
+															observabilityErrors,
+															observabilityErrorsError,
+															observabilityRepo: _observabilityRepo,
+															recentIssues,
+															serviceLevelObjectiveError,
+															serviceLevelObjectives,
+															setIsVulnPresent,
+															showErrors,
+														};
+
 														return (
 															<>
-																<PaneNodeName
-																	data-testid={`entity-name-${ea.entityGuid}`}
-																	title={
-																		<div
-																			style={{
-																				display: "flex",
-																				alignItems: "center",
-																			}}
-																		>
-																			<HealthIcon color={alertSeverityColor} />
-																			<div>
-																				<span data-testid={`entity-name-${ea.entityGuid}`}>
-																					{ea.entityName}
-																				</span>
-																				<span
-																					className="subtle"
-																					style={{
-																						fontSize: "11px",
-																						verticalAlign: "bottom",
-																					}}
-																					data-testid={`entity-account-name-${ea.entityGuid}`}
-																				>
-																					{ea.accountName && ea.accountName.length > 25
-																						? ea.accountName.substr(0, 25) + "..."
-																						: ea.accountName}
-																					{ea?.displayName ? ` (${ea?.displayName})` : ""}
-																				</span>
-																			</div>
-																		</div>
-																	}
-																	id={ea.entityGuid}
-																	labelIsFlex={true}
-																	onClick={e => handleClickTopLevelService(e, ea.entityGuid)}
-																	collapsed={collapsed}
-																	showChildIconOnCollapse={true}
-																	actionsVisibleIfOpen={true}
-																>
-																	{ea.url && (
-																		<Icon
-																			name="globe"
-																			className={cx("clickable", {
-																				"icon-override-actions-visible": true,
-																			})}
-																			title="View on New Relic"
-																			placement="bottomLeft"
-																			delay={1}
-																			onClick={e => {
-																				e.preventDefault();
-																				e.stopPropagation();
-																				HostApi.instance.track("codestream/newrelic_link clicked", {
-																					entity_guid:
-																						derivedState.currentMethodLevelTelemetry
-																							.newRelicEntityGuid,
-																					account_id:
-																						derivedState.currentMethodLevelTelemetry
-																							.newRelicAccountId,
-																					meta_data: "destination: apm_service_summary",
-																					meta_data_2: `codestream_section: golden_metrics`,
-																					event_type: "click",
-																				});
-																				HostApi.instance.send(OpenUrlRequestType, {
-																					url: ea.url!,
-																				});
-																			}}
-																		/>
-																	)}
-																</PaneNodeName>
-																{!collapsed && (
-																	<>
-																		{ea.entityGuid === loadingPane ? (
-																			<>
-																				<ObservabilityLoadingServiceEntity />
-																			</>
-																		) : (
-																			<>
-																				<>
-																					<ObservabilitySummary
-																						entityGoldenMetrics={entityGoldenMetrics}
-																						loadingGoldenMetrics={loadingGoldenMetrics}
-																						entityGoldenMetricsErrors={entityGoldenMetricsErrors}
-																						recentIssues={recentIssues?.recentIssues}
-																						entityGuid={ea.entityGuid}
-																						accountId={ea.accountId}
-																						serviceLevelObjectives={serviceLevelObjectives}
-																						serviceLevelObjectiveError={serviceLevelObjectiveError}
-																						domain={ea?.domain}
-																						currentRepoId={currentRepoId}
-																						hasServiceLevelObjectives={hasServiceLevelObjectives}
-																					/>
-																					{anomalyDetectionSupported && (
-																						<ObservabilityAnomaliesWrapper
-																							accountId={ea.accountId}
-																							observabilityAnomalies={observabilityAnomalies}
-																							observabilityRepo={_observabilityRepo}
-																							entityGuid={ea.entityGuid}
-																							entityName={ea.entityName}
-																							noAccess={noErrorsAccess}
-																							calculatingAnomalies={calculatingAnomalies}
-																							distributedTracingEnabled={
-																								ea?.distributedTracingEnabled
-																							}
-																							languageAndVersionValidation={
-																								ea?.languageAndVersionValidation
-																							}
-																						/>
-																					)}
-																					{showErrors && (
-																						<>
-																							{observabilityErrors?.find(
-																								oe => oe?.repoId === _observabilityRepo?.repoId
-																							) && (
-																								<>
-																									<ObservabilityErrorWrapper
-																										errorInboxError={errorInboxError}
-																										observabilityErrors={observabilityErrors}
-																										observabilityRepo={_observabilityRepo}
-																										observabilityAssignments={
-																											observabilityAssignments
-																										}
-																										errorEntityGuid={ea.entityGuid}
-																										noAccess={noErrorsAccess}
-																										errorMsg={observabilityErrorsError}
-																										domain={ea?.domain}
-																									/>
-																								</>
-																							)}
-																						</>
-																					)}
-																					{currentRepoId && ea?.domain === "APM" && (
-																						<SecurityIssuesWrapper
-																							currentRepoId={currentRepoId}
-																							entityGuid={ea.entityGuid}
-																							accountId={ea.accountId}
-																							setHasVulnerabilities={setIsVulnPresent}
-																						/>
-																					)}
-
-																					{derivedState.showLogSearch &&
-																						(ea?.domain === "APM" || ea?.domain === "EXT") && (
-																							<Row
-																								style={{
-																									padding: "2px 10px 2px 30px",
-																								}}
-																								className={"pr-row"}
-																								onClick={e => {
-																									e.preventDefault();
-																									e.stopPropagation();
-
-																									HostApi.instance.notify(
-																										OpenEditorViewNotificationType,
-																										{
-																											panel: "logs",
-																											title: "Logs",
-																											entityGuid: ea.entityGuid,
-																											entryPoint: "tree_view",
-																											ide: {
-																												name: derivedState.ideName,
-																											},
-																										}
-																									);
-																								}}
-																							>
-																								<span
-																									data-testid={`view-logs-${ea.entityGuid}`}
-																									style={{ marginLeft: "2px" }}
-																								>
-																									<Icon
-																										style={{ marginRight: "4px" }}
-																										name="logs"
-																										title="View Logs"
-																									/>
-																									View Logs
-																								</span>
-																							</Row>
-																						)}
-																				</>
-																			</>
-																		)}
-																	</>
-																)}
+																<ObservabilityServiceEntity {...observabilityServiceEntityProps} />
 															</>
 														);
 													})}

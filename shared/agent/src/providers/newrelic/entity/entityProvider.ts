@@ -39,6 +39,7 @@ import {
 	GraphqlNrqlTimeoutError,
 } from "../newrelic.types";
 import { NrApiConfig } from "../nrApiConfig";
+import { ReposProvider } from "../repos/reposProvider";
 
 const ENTITY_CACHE_KEY = "entityCache";
 
@@ -64,7 +65,8 @@ export class EntityProvider implements Disposable {
 
 	constructor(
 		private nrApiConfig: NrApiConfig,
-		private graphqlClient: NewRelicGraphqlClient
+		private graphqlClient: NewRelicGraphqlClient,
+		private reposProvider: ReposProvider
 	) {}
 
 	get coreUrl() {
@@ -128,6 +130,7 @@ export class EntityProvider implements Disposable {
 					name
 					entityType
 					type
+					domain
 					tags {
 						key
 						values
@@ -140,25 +143,40 @@ export class EntityProvider implements Disposable {
 			actor: {
 				entity: {
 					account: { name: string; id: number };
+					domain: string;
 					guid: string;
 					name: string;
 					entityType: EntityType;
-					type: string;
+					type: EntityType;
 					tags: { key: string; values: string[] }[];
 				};
 			};
 		}>(query);
-		const entity = response.actor.entity;
+		const entity: Entity = response.actor.entity;
+
+		const distributedTracingEnabled = this.reposProvider.hasStandardOrInfiniteTracing(entity);
+
+		const languageAndVersionValidation = await this.reposProvider.languageAndVersionValidation(
+			entity
+		);
+
+		const mappedRepoEntities = await this.reposProvider.findMappedRemoteByEntity(entity.guid);
+
 		return {
 			entity: {
-				accountId: entity.account.id,
-				accountName: entity.account.name,
+				accountId: entity?.account?.id || 1,
+				accountName: entity?.account?.name || "",
+				domain: entity.domain,
 				entityGuid: entity.guid,
 				entityName: entity.name,
 				type: entity.type,
 				entityType: entity.entityType,
-				entityTypeDescription: EntityTypeMap[entity.entityType],
-				tags: entity.tags,
+				entityTypeDescription: entity?.entityType && EntityTypeMap[entity?.entityType],
+				tags: entity.tags || [],
+				distributedTracingEnabled,
+				languageAndVersionValidation,
+				url: `${this.nrApiConfig.productUrl}/redirect/entity/${entity.guid}`,
+				repoEntities: mappedRepoEntities,
 			},
 		};
 	}
@@ -433,26 +451,28 @@ export class EntityProvider implements Disposable {
 				};
 			}>(
 				`query fetchEntitiesByIds($guids: [EntityGuid]!) {
-  actor {    
-    entities(guids: $guids) {
-	 accountId
-	 account {
-        name
-        id
-     }
-	 goldenMetrics {
-        metrics {
-          query
-          name
-        }
-      }
-	 guid
-     name
-	 entityType
-	 type	 
-    }
-  }
-}`,
+					actor {    
+						entities(guids: $guids) {
+						accountId
+						account {
+							name
+							id
+						}
+						goldenMetrics {
+							metrics {
+							query
+							name
+							}
+						}
+						guid
+						name
+						entityType
+						type
+						domain
+						alertSeverity
+						}
+					}
+				}`,
 				{
 					guids: needed,
 				}

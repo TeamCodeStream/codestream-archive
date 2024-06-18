@@ -32,6 +32,7 @@ import { NrApiConfig } from "../nrApiConfig";
 import { NrqlQueryBuilder } from "../nrql/nrqlQueryBuilder";
 import { ReposProvider } from "../repos/reposProvider";
 import { mapNRErrorResponse, parseId, toFixedNoRounding } from "../utils";
+import { EntityProvider } from "../entity/entityProvider";
 
 @lsp
 export class GoldenSignalsProvider {
@@ -39,7 +40,8 @@ export class GoldenSignalsProvider {
 		private graphqlClient: NewRelicGraphqlClient,
 		private reposProvider: ReposProvider,
 		private nrApiConfig: NrApiConfig,
-		private deploymentsProvider: DeploymentsProvider
+		private deploymentsProvider: DeploymentsProvider,
+		private entityProvider: EntityProvider
 	) {}
 
 	@lspHandler(GetServiceLevelTelemetryRequestType)
@@ -51,15 +53,28 @@ export class GoldenSignalsProvider {
 		const observabilityRepo = await this.reposProvider.getObservabilityEntityRepos(
 			request.repoId,
 			request.skipRepoFetch === true,
-			force
+			force,
+			request?.isServiceSearch || false
 		);
 		if (!request.skipRepoFetch && (!observabilityRepo || !observabilityRepo.entityAccounts)) {
 			throw new ResponseError(ERROR_SLT_MISSING_OBSERVABILITY_REPOS, "No observabilityRepos");
 		}
 
-		const entity = observabilityRepo?.entityAccounts.find(
-			_ => _.entityGuid === request.newRelicEntityGuid
-		);
+		let entity;
+		if (request.isServiceSearch) {
+			const entities = await this.entityProvider.getEntitiesById({
+				guids: [request.newRelicEntityGuid],
+			});
+
+			if (entities.entities.length > 0) {
+				entity = entities.entities[0];
+			}
+		} else {
+			entity = observabilityRepo?.entityAccounts.find(
+				_ => _.entityGuid === request.newRelicEntityGuid
+			);
+		}
+
 		if (!request.skipRepoFetch && !entity) {
 			ContextLogger.warn("Missing entity", {
 				entityId: request.newRelicEntityGuid,
@@ -75,7 +90,7 @@ export class GoldenSignalsProvider {
 				recentIssuesResponse = await this.getIssues(accountId!, request.newRelicEntityGuid);
 			}
 
-			const validEntityGuid: string = entity?.entityGuid ?? request.newRelicEntityGuid;
+			const validEntityGuid: string = entity?.guid ?? request.newRelicEntityGuid;
 
 			const entityGoldenMetrics = await this.getEntityLevelGoldenMetrics(
 				validEntityGuid,
@@ -86,7 +101,7 @@ export class GoldenSignalsProvider {
 				entityGoldenMetrics: entityGoldenMetrics,
 				newRelicEntityAccounts: observabilityRepo?.entityAccounts ?? [],
 				newRelicAlertSeverity: entity?.alertSeverity,
-				newRelicEntityName: entity?.entityName,
+				newRelicEntityName: entity?.name,
 				newRelicEntityGuid: validEntityGuid,
 				newRelicUrl: `${this.nrApiConfig.productUrl}/redirect/entity/${validEntityGuid}`,
 				recentIssues: recentIssuesResponse,

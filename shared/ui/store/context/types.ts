@@ -50,6 +50,7 @@ export enum ContextActionsType {
 	SetCurrentPullRequestNeedsRefresh = "@context/SetCurrentPullRequestNeedsRefresh",
 	SetCurrentErrorsInboxOptions = "@context/SetCurrentErrorsInboxOptions",
 	SetCurrentInstrumentationOptions = "@context/SetCurrentInstrumentationOptions",
+	SetCurrentServiceSearchEntity = "@context/SetCurrentServiceSearchEntity",
 	SetCurrentPixieDynamicLoggingOptions = "@context/SetCurrentPixieDynamicLoggingOptions",
 	SetCurrentPullRequestAndBranch = "@context/SetCurrentPullRequestAndBranch",
 	SetNewPullRequestOptions = "@context/SetNewPullRequestOptions",
@@ -86,7 +87,7 @@ export interface ContextState extends WebviewContext {
 	codemarkTagFilter: string;
 	codemarkBranchFilter: string;
 	codemarkAuthorFilter: string;
-
+	currentServiceSearchEntity?: string;
 	codemarksFileViewStyle: "list" | "inline";
 	codemarksShowArchived: boolean;
 	codemarksShowResolved: boolean;
@@ -135,7 +136,6 @@ export interface ContextState extends WebviewContext {
 	entityAccounts?: EntityAccount[];
 
 	selectedRegion?: string;
-
 	currentEntityGuid?: string;
 }
 

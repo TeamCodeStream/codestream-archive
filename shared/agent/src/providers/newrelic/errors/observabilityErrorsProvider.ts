@@ -19,6 +19,9 @@ import {
 	GetObservabilityErrorsRequest,
 	GetObservabilityErrorsRequestType,
 	GetObservabilityErrorsResponse,
+	GetObservabilityErrorsWithoutReposRequestType,
+	GetObservabilityErrorsWithoutReposRequest,
+	GetObservabilityErrorsWithoutReposResponse,
 	isNRErrorResponse,
 	NewRelicErrorGroup,
 	ObservabilityError,
@@ -232,6 +235,85 @@ export class ObservabilityErrorsProvider {
 	}
 
 	/**
+	 * Returns a list of errors for a given entity without a repo required
+	 *
+	 * Can throw errors
+	 *
+	 * @param {GetObservabilityErrorsWithoutReposRequest} request
+	 * @return {Promise<GetObservabilityErrorsWithoutReposResponse>}
+	 * @memberof ObservabilityErrorsProvider
+	 */
+	@lspHandler(GetObservabilityErrorsWithoutReposRequestType)
+	@log()
+	async getObservabilityErrorsWithoutRepos(
+		request: GetObservabilityErrorsWithoutReposRequest
+	): Promise<GetObservabilityErrorsWithoutReposResponse> {
+		const response: GetObservabilityErrorsWithoutReposResponse = { repos: [] };
+		const observabilityErrors: ObservabilityError[] = [];
+		let gotoEnd = false;
+
+		try {
+			const errorTraceWrappers = await this.findFingerprintedErrorTraces(
+				request.accountId,
+				request.entityGuid,
+				request.entityType,
+				request.timeWindow
+			);
+			for (const errorTraceWrapper of errorTraceWrappers) {
+				for (const errorTrace of errorTraceWrapper.response) {
+					try {
+						const response = await this.getErrorGroupDetails(
+							errorTrace,
+							errorTraceWrapper.errorQuery.entityType
+						);
+
+						const commonErrorTrace = errorQueryResultToCommonError(
+							errorTraceWrapper.errorQuery,
+							errorTrace
+						);
+
+						if (response && response.actor.errorsInbox.errorGroup) {
+							observabilityErrors.push({
+								entityId: commonErrorTrace.entityGuid,
+								appName: commonErrorTrace.appName,
+								errorClass: commonErrorTrace.errorClass,
+								message: commonErrorTrace.message,
+								remote: "",
+								errorGroupGuid: response.actor.errorsInbox.errorGroup.id,
+								occurrenceId: commonErrorTrace.occurrenceId,
+								traceId: commonErrorTrace.traceId,
+								count: commonErrorTrace.count,
+								lastOccurrence: commonErrorTrace.lastOccurrence,
+								errorGroupUrl: response.actor.errorsInbox.errorGroup.url,
+							});
+							if (observabilityErrors.length > 4) {
+								gotoEnd = true;
+								break;
+							}
+						}
+					} catch (ex) {
+						ContextLogger.warn("internal error getErrorGroupGuid", {
+							ex: ex,
+						});
+					}
+				}
+			}
+		} catch (ex) {
+			ContextLogger.error(ex, "getObservabilityErrors");
+			if (ex instanceof ResponseError) {
+				throw ex;
+			}
+			return { error: mapNRErrorResponse(ex) };
+		}
+		response.repos?.push({
+			repoId: "serviceSearch",
+			repoName: "serviceSearch",
+			errors: observabilityErrors!,
+		});
+		return response;
+	}
+
+	/**
 	 * Find a list of error traces grouped by fingerprint
 	 *
 	 * @param accountId the NR1 account id to query against
@@ -244,7 +326,7 @@ export class ObservabilityErrorsProvider {
 	private async findFingerprintedErrorTraces(
 		accountId: number,
 		applicationGuid: string,
-		entityType: EntityType,
+		entityType: EntityType | string,
 		timeWindow: string
 	): Promise<ErrorResultWrapper[]> {
 		const queries = getFingerprintedErrorTraceQueries(applicationGuid, entityType, timeWindow);

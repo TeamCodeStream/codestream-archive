@@ -1,6 +1,6 @@
 {
 	"name": "codestream.visualstudio",
-	"version": "15.9.0",
+	"version": "15.10.0",
 	"description": "CodeStream for Visual Studio",
 	"main": "index.js",
 	"author": "",

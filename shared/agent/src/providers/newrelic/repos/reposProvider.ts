@@ -482,7 +482,7 @@ export class ReposProvider implements Disposable {
 		}
 	}
 
-	private async languageAndVersionValidation(
+	async languageAndVersionValidation(
 		entity?: Entity,
 		isVsCode?: boolean
 	): Promise<LanguageAndVersionValidation> {
@@ -539,7 +539,7 @@ export class ReposProvider implements Disposable {
 		};
 	}
 
-	private hasStandardOrInfiniteTracing(entity?: Entity): boolean {
+	hasStandardOrInfiniteTracing(entity?: Entity): boolean {
 		const tags = entity?.tags || [];
 		const tracingTag = tags.find(tag => tag.key === "nr.tracing");
 
@@ -636,7 +636,8 @@ export class ReposProvider implements Disposable {
 	async getObservabilityEntityRepos(
 		repoId: string,
 		skipRepoFetch = false,
-		force = false
+		force = false,
+		isServiceSearch = false
 	): Promise<ObservabilityRepo | undefined> {
 		let observabilityRepos: GetObservabilityReposResponse | undefined;
 		try {

@@ -18,12 +18,16 @@ import { CodeErrorTimeWindow } from "@codestream/protocols/api";
 import { InlineMenu } from "../src/components/controls/InlineMenu";
 import { setUserPreference } from "./actions";
 import styled from "styled-components";
+import { openModal } from "../store/context/actions";
+import { WebviewModals } from "@codestream/protocols/webview";
 
 interface Props {
 	observabilityErrors: ObservabilityRepoError[];
 	observabilityRepo?: ObservabilityRepo;
 	entityGuid?: string;
 	domain?: string;
+	isServiceSearch?: boolean;
+	hasRepoAssociated?: boolean;
 }
 
 const SubtleDropdown = styled.span`
@@ -51,16 +55,22 @@ export const ObservabilityErrorDropdown = React.memo((props: Props) => {
 	const [isLoadingErrorGroupGuid, setIsLoadingErrorGroupGuid] = useState<string>("");
 
 	useEffect(() => {
-		let _filteredErrorsByRepo = props.observabilityErrors.filter(
-			oe => oe?.repoId === observabilityRepo?.repoId
-		);
+		if (!props.isServiceSearch) {
+			let _filteredErrorsByRepo = props.observabilityErrors.filter(
+				oe => oe?.repoId === observabilityRepo?.repoId
+			);
 
-		const _filteredErrors = _filteredErrorsByRepo.map(fe => {
-			return fe.errors.filter(error => {
-				return error.entityId === props.entityGuid;
+			const _filteredErrors = _filteredErrorsByRepo.map(fe => {
+				return fe.errors.filter(error => {
+					return error.entityId === props.entityGuid;
+				});
 			});
-		});
-		setFilteredErrors(_filteredErrors || []);
+			setFilteredErrors(_filteredErrors || []);
+		} else {
+			if (props.observabilityErrors.length > 0) {
+				setFilteredErrors([props.observabilityErrors[0]?.errors] || []);
+			}
+		}
 	}, [props.observabilityErrors]);
 
 	const { observabilityRepo } = props;
@@ -71,6 +81,8 @@ export const ObservabilityErrorDropdown = React.memo((props: Props) => {
 		checked: derivedState.timeWindow === _,
 		action: () => dispatch(setUserPreference({ prefPath: ["codeErrorTimeWindow"], value: _ })),
 	}));
+
+	const popup = (modal: WebviewModals) => dispatch(openModal(modal));
 
 	return (
 		<>
@@ -127,36 +139,40 @@ export const ObservabilityErrorDropdown = React.memo((props: Props) => {
 											customPadding={"0 10px 0 50px"}
 											isLoading={isLoadingErrorGroupGuid === indexedErrorGroupGuid}
 											onClick={async e => {
-												try {
-													setIsLoadingErrorGroupGuid(indexedErrorGroupGuid);
-													const response = derivedState.errorsDemoMode
-														? ({} as GetObservabilityErrorGroupMetadataResponse)
-														: await HostApi.instance.send(
-																GetObservabilityErrorGroupMetadataRequestType,
-																{ entityGuid: err.entityId, traceId: err.traceId }
-														  );
-													await dispatch(
-														openErrorGroup({
-															errorGroupGuid: err.errorGroupGuid,
-															occurrenceId: err.occurrenceId,
-															data: {
-																multipleRepos: response?.relatedRepos?.length > 1,
-																relatedRepos: response?.relatedRepos || undefined,
-																timestamp: err.lastOccurrence,
-																sessionStart: derivedState.sessionStart,
-																occurrenceId: response?.occurrenceId || err.occurrenceId,
-																openType: "Observability Section",
-																remote: err?.remote || undefined,
-																stackSourceMap: response?.stackSourceMap,
-																domain: props?.domain,
-																traceId: err.traceId,
-															},
-														})
-													);
-												} catch (ex) {
-													console.error(ex);
-												} finally {
-													setIsLoadingErrorGroupGuid("");
+												if (props.isServiceSearch && !props.hasRepoAssociated) {
+													popup(WebviewModals.ErrorRoadblock);
+												} else {
+													try {
+														setIsLoadingErrorGroupGuid(indexedErrorGroupGuid);
+														const response = derivedState.errorsDemoMode
+															? ({} as GetObservabilityErrorGroupMetadataResponse)
+															: await HostApi.instance.send(
+																	GetObservabilityErrorGroupMetadataRequestType,
+																	{ entityGuid: err.entityId, traceId: err.traceId }
+															  );
+														await dispatch(
+															openErrorGroup({
+																errorGroupGuid: err.errorGroupGuid,
+																occurrenceId: err.occurrenceId,
+																data: {
+																	multipleRepos: response?.relatedRepos?.length > 1,
+																	relatedRepos: response?.relatedRepos || undefined,
+																	timestamp: err.lastOccurrence,
+																	sessionStart: derivedState.sessionStart,
+																	occurrenceId: response?.occurrenceId || err.occurrenceId,
+																	openType: "Observability Section",
+																	remote: err?.remote || undefined,
+																	stackSourceMap: response?.stackSourceMap,
+																	domain: props?.domain,
+																	traceId: err.traceId,
+																},
+															})
+														);
+													} catch (ex) {
+														console.error(ex);
+													} finally {
+														setIsLoadingErrorGroupGuid("");
+													}
 												}
 											}}
 										/>

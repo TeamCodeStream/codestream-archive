@@ -1,5 +1,11 @@
 # Change Log
 
+## [15.10.0] - 2024-6-20
+
+### Added
+
+- Adds service search, allowing you to see observability data for any service, even when you don't have the repository open in your IDE
+
 ## [15.9.0] - 2024-6-6
 
 ### Added

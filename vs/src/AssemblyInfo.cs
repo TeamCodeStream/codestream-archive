@@ -6,5 +6,5 @@ using System.Runtime.InteropServices;
 
 [assembly: ComVisible(false)]
 
-[assembly: AssemblyVersion("15.9.0")]
-[assembly: AssemblyFileVersion("15.9.0")]
+[assembly: AssemblyVersion("15.10.0")]
+[assembly: AssemblyFileVersion("15.10.0")]

@@ -52,6 +52,7 @@ const initialState: ContextState = {
 	currentPixieDynamicLoggingOptions: undefined,
 	currentPullRequestNeedsRefresh: { needsRefresh: false, providerId: "", pullRequestId: "" },
 	entityAccounts: [],
+	currentServiceSearchEntity: undefined,
 };
 
 export function reduceContext(
@@ -206,6 +207,12 @@ export function reduceContext(
 			return {
 				...state,
 				currentInstrumentation: action.payload.options,
+			};
+		}
+		case ContextActionsType.SetCurrentServiceSearchEntity: {
+			return {
+				...state,
+				currentServiceSearchEntity: action.payload.entityGuid,
 			};
 		}
 		case ContextActionsType.SetCurrentPixieDynamicLoggingOptions: {

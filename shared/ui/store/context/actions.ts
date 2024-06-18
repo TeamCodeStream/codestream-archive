@@ -241,6 +241,9 @@ export const setCurrentPullRequestNeedsRefresh = (
 		pullRequestId,
 	});
 
+export const setCurrentServiceSearchEntity = (entityGuid?: string) =>
+	action(ContextActionsType.SetCurrentServiceSearchEntity, { entityGuid });
+
 export const setCurrentInstrumentationOptions = (options?: any) =>
 	action(ContextActionsType.SetCurrentInstrumentationOptions, { options });
 

@@ -18,6 +18,7 @@ import {
 	fillNullValues,
 	getUniqueDataKeyAndFacetValues,
 	formatXAxisTime,
+	isMultiSelect,
 } from "./utils";
 import { EventTypeTooltip } from "./EventTypeTooltip";
 import { EventTypeLegend } from "./EventTypeLegend";
@@ -90,6 +91,8 @@ export const NRQLResultsLine: React.FC<NRQLResultsLineProps> = ({
 		setActiveIndex(undefined);
 	};
 
+	const queryIsMultiSelect = isMultiSelect(results);
+
 	const FacetLineLegend = ({ payload }: { payload?: { dataKey: string; color: string }[] }) => {
 		return (
 			<div
@@ -145,7 +148,7 @@ export const NRQLResultsLine: React.FC<NRQLResultsLineProps> = ({
 	return (
 		<div style={{ marginLeft: `-${LEFT_MARGIN_ADJUST_VALUE}px` }} className="histogram-chart">
 			<div style={{ height: height, overflowY: "auto", overflowX: "hidden" }}>
-				{_isEmpty(facet) ? (
+				{_isEmpty(facet) && !queryIsMultiSelect && (
 					<ResponsiveContainer width="100%" height={500} debounce={1}>
 						{/* Non-facet, single line chart */}
 						<LineChart
@@ -172,7 +175,46 @@ export const NRQLResultsLine: React.FC<NRQLResultsLineProps> = ({
 							/>
 						</LineChart>
 					</ResponsiveContainer>
-				) : (
+				)}
+				{_isEmpty(facet) && queryIsMultiSelect && (
+					<ResponsiveContainer width="100%" height={500} debounce={1}>
+						{/* Non-facet, single line chart */}
+						<LineChart
+							width={500}
+							height={300}
+							data={results}
+							margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+						>
+							<CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+							<XAxis
+								tick={{ fontSize: 11 }}
+								dataKey="endTimeSeconds"
+								tickFormatter={formatXAxisTime}
+							/>
+							<YAxis tick={{ fontSize: 11 }} />
+							<ReTooltip content={<FacetLineTooltip activeDotKey={activeDotKey} />} />
+							{dataKeys.map((_, index) => {
+								const color = ColorsHash[index % Colors.length];
+								return (
+									<Line
+										key={_}
+										dataKey={_}
+										stroke={color}
+										fill={color}
+										dot={false}
+										strokeOpacity={activeIndex === undefined ? 1 : activeIndex === index ? 1 : 0.5}
+										activeDot={{
+											onMouseOver: e => customMouseOver(_, index),
+											onMouseLeave: e => customMouseLeave(),
+										}}
+									/>
+								);
+							})}
+							<Legend content={<FacetLineLegend />} />
+						</LineChart>
+					</ResponsiveContainer>
+				)}
+				{!_isEmpty(facet) && (
 					<ResponsiveContainer width="100%" height={500} debounce={1}>
 						{/* facet, multiple line chart */}
 						<LineChart width={500} height={300} data={resultsForLineChart}>

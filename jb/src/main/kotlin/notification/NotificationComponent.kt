@@ -160,10 +160,19 @@ class NotificationComponent(val project: Project) {
                 }
                 project.clmService?.revealSymbol(firstAnomaly.codeFilepath, firstAnomaly.codeNamespace, firstAnomaly.codeFunction)
             }
-            telemetry(TelemetryEvent.TOAST_CLICKED, "CLM Anomaly")
+            val params = TelemetryParams(TelemetryEvent.TOAST_CLICKED.value, mapOf(
+                "meta_data" to "content: anomaly",
+                "target" to "toast",
+                "event_type" to "click"
+            ))
+            project.agentService?.agent?.telemetry(params)
         })
 
-        telemetry(TelemetryEvent.TOAST_NOTIFICATION, "CLM Anomaly")
+        val params = TelemetryParams(TelemetryEvent.TOAST_NOTIFICATION.value, mapOf(
+            "meta_data" to "content: anomaly",
+            "event_type" to "modal_display"
+        ))
+        project.agentService?.agent?.telemetry(params)
         notification.notify(project)
     }
 
@@ -212,12 +221,15 @@ class NotificationComponent(val project: Project) {
     }
 
     private enum class TelemetryEvent(val value: String) {
-        TOAST_NOTIFICATION("Toast Notification"),
-        TOAST_CLICKED("Toast Clicked")
+        TOAST_NOTIFICATION("codestream/toast displayed"),
+        TOAST_CLICKED("codestream/toast_button clicked")
     }
 
     private fun telemetry(event: TelemetryEvent, content: String) {
-        val params = TelemetryParams(event.value, mapOf("Content" to content))
+        val params = TelemetryParams(event.value, mapOf(
+            "meta_data" to "content: $content",
+            "event_type" to "modal_display"
+        ))
         project.agentService?.agent?.telemetry(params)
     }
 

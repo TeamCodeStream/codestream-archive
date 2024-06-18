@@ -6,14 +6,6 @@ import { CodedError } from "./providers/newrelic/newrelic.types";
 // Time period in seconds in which we evaluate the rate limit
 export const RATE_LIMIT_INTERVAL = 15;
 
-// Tried to extend SessionContainer.instance().session to to notify when session loaded
-// on callback and read current api url but it failed in the most inexplicable way.
-const nrApiOrigins = new Set([
-	"https://api.eu.newrelic.com",
-	"https://api.newrelic.com",
-	"https://staging-api.newrelic.com",
-]);
-
 const codestreamOrigins = new Set([
 	"https://localhost.newrelic.com:12079",
 	"https://codestream-stg.staging-service.newrelic.com",
@@ -23,11 +15,12 @@ const codestreamOrigins = new Set([
 	"https://codestream-us1.service.newrelic.com",
 ]);
 
-// Rate limits
+// Rate limits - this is per RATE_LIMIT_INTERVAL seconds
+// warn: log a warning, but don't block
+// report: log an error (errors inbox), but don't block
+// block: block the request
+// forceLogout: block the request and force logout
 function getRateLimitConfig(origin: string): LimitConfig {
-	if (nrApiOrigins.has(origin)) {
-		return { limit: { warn: 50, block: 75 }, includePath: false };
-	}
 	if (codestreamOrigins.has(origin)) {
 		return { limit: { warn: 100, forceLogout: 200 }, includePath: true };
 	}
@@ -36,7 +29,7 @@ function getRateLimitConfig(origin: string): LimitConfig {
 	// 	return { warn: 30, block: 20 };
 	// }
 	else {
-		return { limit: { warn: 150, report: 200 }, includePath: false };
+		return { limit: { warn: 75, report: 100, forceLogout: 150 }, includePath: false };
 	}
 }
 

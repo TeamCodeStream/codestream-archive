@@ -585,11 +585,13 @@ abstract class CLMEditorManager(
             val updateInlaysCoreRenderStopWatch = startWithName("updateInlaysCore render")
             if (!analyticsTracked && toRender.isNotEmpty()) {
                 val params = TelemetryParams(
-                    "MLT Codelenses Rendered", mapOf(
-                    "NR Account ID" to (result.newRelicAccountId ?: 0),
-                    "Language" to languageId,
-                    "Codelense Count" to toRender.size
-                )
+                    "codestream/codelenses displayed", mapOf(
+                        "account_id" to (result.newRelicAccountId ?: 0),
+                        "entity_guid" to (result.newRelicEntityGuid ?: 0),
+                        "meta_data" to "language: $languageId",
+                        "meta_data_2" to "codelense_count: ${toRender.size}",
+                        "event_type" to "state_load"
+                    )
                 )
                 project.agentService?.agent?.telemetry(params)
                 analyticsTracked = true
