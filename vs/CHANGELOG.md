@@ -1,5 +1,15 @@
 # Change Log
 
+## [15.11.0] - 2024-7-8
+
+### Added
+
+- Adds support for double quotes in NRQL queries
+
+### Fixed
+
+- Fixes an issue with the Enter key not submitting queries when no repositories are open
+
 ## [15.10.0] - 2024-6-20
 
 ### Added

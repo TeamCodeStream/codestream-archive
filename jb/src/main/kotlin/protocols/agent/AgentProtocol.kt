@@ -634,7 +634,7 @@ open class MethodLevelTelemetryData(
     val namespace: String?,
     val className: String?,
     val functionName: String?,
-    val metricTimesliceName: String,
+    val facet: List<String>,
     val anomaly: ObservabilityAnomaly?,
     val lineno: Int?,
     val column: Int?,
@@ -651,11 +651,11 @@ class MethodLevelTelemetrySampleSize(
     lineno: Int?,
     column: Int?,
     commit: String?,
-    metricTimesliceName: String,
+    facet: List<String>,
     anomaly: ObservabilityAnomaly?,
     val sampleSize: Int,
     val source: String
-) : MethodLevelTelemetryData(namespace, className, functionName, metricTimesliceName, anomaly, lineno, column, commit)
+) : MethodLevelTelemetryData(namespace, className, functionName, facet, anomaly, lineno, column, commit)
 
 class MethodLevelTelemetryAverageDuration(
     namespace: String?,
@@ -664,12 +664,12 @@ class MethodLevelTelemetryAverageDuration(
     lineno: Int?,
     column: Int?,
     commit: String?,
-    metricTimesliceName: String,
+    facet: List<String>,
     anomaly: ObservabilityAnomaly?,
     val averageDuration: Float
-) : MethodLevelTelemetryData(namespace, className, functionName, metricTimesliceName, anomaly, lineno, column, commit) {
+) : MethodLevelTelemetryData(namespace, className, functionName, facet, anomaly, lineno, column, commit) {
     override fun toString(): String {
-        return "MethodLevelTelemetryAverageDuration(namespace=$namespace, className=$className, functionName=$functionName, lineno=$lineno, column=$column, commit=$commit, metricTimesliceName=$metricTimesliceName, anomaly=$anomaly, averageDuration=$averageDuration)"
+        return "MethodLevelTelemetryAverageDuration(namespace=$namespace, className=$className, functionName=$functionName, lineno=$lineno, column=$column, commit=$commit, facet=$facet, anomaly=$anomaly, averageDuration=$averageDuration)"
     }
 }
 
@@ -680,10 +680,10 @@ class MethodLevelTelemetryErrorRate(
     lineno: Int?,
     column: Int?,
     commit: String?,
-    metricTimesliceName: String,
+    facet: List<String>,
     anomaly: ObservabilityAnomaly?,
     val errorRate: Float
-) : MethodLevelTelemetryData(namespace, className, functionName, metricTimesliceName, anomaly, lineno, column, commit)
+) : MethodLevelTelemetryData(namespace, className, functionName, facet, anomaly, lineno, column, commit)
 
 class FileLevelTelemetryResult(
     var error: FileLevelTelemetryResultError?,

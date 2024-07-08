@@ -1400,6 +1400,8 @@ export interface ObservabilityRepo {
 	repoId: string;
 	repoName: string;
 	repoRemote: string;
+	repoGuid: string;
+	repoNameOnNr: string;
 	hasRepoAssociation?: boolean;
 	hasCodeLevelMetricSpanData: boolean | NRErrorResponse;
 	entityAccounts: EntityAccount[];

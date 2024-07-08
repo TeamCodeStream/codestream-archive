@@ -214,6 +214,9 @@ export class ReposProvider implements Disposable {
 					remote = remotes[0];
 				}
 
+				let firstMatchedRepoGuid = "";
+				let repoNameOnNr = "";
+
 				const uniqueEntities: Entity[] = [];
 				if (applicationAssociations && applicationAssociations.length) {
 					for (const entity of applicationAssociations) {
@@ -245,6 +248,27 @@ export class ReposProvider implements Disposable {
 								) {
 									continue;
 								}
+
+								const tagsArray = relatedResult?.target?.entity.tags;
+								if (tagsArray) {
+									const urlEntry = tagsArray.find(entry => entry.key === "url");
+									if (
+										urlEntry?.values &&
+										remoteUrls.some(url => {
+											if (url) {
+												return urlEntry.values.includes(url);
+											} else {
+												return false;
+											}
+										}) &&
+										!firstMatchedRepoGuid
+									) {
+										firstMatchedRepoGuid = relatedResult.target.entity.guid;
+									}
+								}
+
+								repoNameOnNr = relatedResult.target.entity.name;
+
 								uniqueEntities.push(relatedResult.source.entity);
 							}
 						}
@@ -284,6 +308,8 @@ export class ReposProvider implements Disposable {
 					repoId: repo.path,
 					repoName: folderName,
 					repoRemote: remote,
+					repoGuid: firstMatchedRepoGuid,
+					repoNameOnNr,
 					hasRepoAssociation,
 					hasCodeLevelMetricSpanData: true,
 					entityAccounts: mappedUniqueEntities,
@@ -665,22 +691,6 @@ export class ReposProvider implements Disposable {
 			});
 			return undefined;
 		}
-
-		// if (!repo.hasRepoAssociation) {
-		// 	ContextLogger.warn("Missing repo association", {
-		// 		repo: repo
-		// 	});
-
-		// 	return undefined;
-		// }
-
-		// const entityLength = repo.entityAccounts.length;
-		// if (!entityLength) {
-		// 	ContextLogger.warn("Missing entities", {
-		// 		repo: repo
-		// 	});
-		// 	return undefined;
-		// }
 		return repo;
 	}
 

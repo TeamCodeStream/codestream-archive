@@ -5,6 +5,7 @@ import {
 	NRQLResult,
 	ResultsTypeGuess,
 	isNRErrorResponse,
+	GetNRQLResponse,
 } from "@codestream/protocols/agent";
 import {
 	BrowserEngines,
@@ -35,6 +36,7 @@ import { NRQLVisualizationDropdown } from "./NRQLVisualizationDropdown";
 import { RecentQueries } from "./RecentQueries";
 import { PanelHeaderTitleWithLink } from "../PanelHeaderTitleWithLink";
 import { DropdownWithSearch } from "../DropdownWithSearch";
+import { useDidMount } from "../../utilities/hooks";
 
 const QueryWrapper = styled.div`
 	width: 100%;
@@ -154,6 +156,7 @@ export const NRQLPanel = (props: {
 	const [userQuery, setUserQuery] = useState<string>("");
 	const [results, setResults] = useState<NRQLResult[]>([]);
 	const [noResults, setNoResults] = useState<boolean>(false);
+	const [noResultResponse, setNoResultsResponse] = useState<GetNRQLResponse[]>([]);
 	const [eventType, setEventType] = useState<string>();
 	const [facet, setFacet] = useState<string[] | undefined>(undefined);
 	const [since, setSince] = useState<string>();
@@ -176,31 +179,9 @@ export const NRQLPanel = (props: {
 	const trimmedHeight: number = (height ?? 0) - (height ?? 0) * 0.05;
 	const { width: entitySearchWidth, ref: entitySearchRef } = useResizeDetector();
 
-	const disposables: Disposable[] = [];
-
 	let accountsPromise;
 
-	const accountId = useMemo(() => {
-		return (selectedAccount?.value || initialAccountId)!;
-	}, [selectedAccount]);
-
-	useEffect(() => {
-		disposables.push(
-			HostApi.instance.on(OpenEditorViewNotificationType, e => {
-				if (!nrqlEditorRef?.current) return;
-
-				const value = e.query || "";
-				nrqlEditorRef.current!.setValue(value);
-				setUserQuery(value);
-				executeNRQL(accountId, value);
-			})
-		);
-		return () => {
-			disposables && disposables.forEach(_ => _.dispose());
-		};
-	}, [accountId]);
-
-	useEffect(() => {
+	useDidMount(() => {
 		HostApi.instance.track("codestream/nrql/webview displayed", {
 			event_type: "modal_display",
 			meta_data: `entry_point: ${props.entryPoint}`,
@@ -234,7 +215,29 @@ export const NRQLPanel = (props: {
 			.catch(ex => {
 				handleError(ex?.message || "Error fetching accounts");
 			});
-	}, []);
+	});
+
+	const accountId = useMemo(() => {
+		return (selectedAccount?.value || initialAccountId)!;
+	}, [selectedAccount]);
+
+	const disposables: Disposable[] = [];
+
+	useEffect(() => {
+		disposables.push(
+			HostApi.instance.on(OpenEditorViewNotificationType, e => {
+				if (!nrqlEditorRef?.current) return;
+
+				const value = e.query || "";
+				nrqlEditorRef.current!.setValue(value);
+				setUserQuery(value);
+				executeNRQL(accountId, value);
+			})
+		);
+		return () => {
+			disposables && disposables.forEach(_ => _.dispose());
+		};
+	}, [accountId]);
 
 	const handleError = (message: string) => {
 		setNRQLError(message);
@@ -278,7 +281,11 @@ export const NRQLPanel = (props: {
 				return;
 			}
 
-			setNoResults(!response.results || !response.results.length);
+			if (!response.results || !response.results.length) {
+				setNoResults(!response.results || !response.results.length);
+				setNoResultsResponse([response]);
+			}
+
 			if (response.results && response.results.length > 0) {
 				HostApi.instance.track("codestream/nrql/query submitted", {
 					account_id: response.accountId,
@@ -424,20 +431,23 @@ export const NRQLPanel = (props: {
 							</AccountRecentContainer>
 						</div>
 						<ResizeEditorContainer ref={editorRef}>
-							<NRQLEditor
-								className="input-text control"
-								defaultValue={props.query || DEFAULT_QUERY}
-								height={`${editorHeight}px`}
-								onChange={e => {
-									setUserQuery(e.value || "");
-								}}
-								onSubmit={e => {
-									setUserQuery(e.value!);
-									executeNRQL(accountId, e.value!);
-								}}
-								useSimpleEditor={!supports.enhancedEditor}
-								ref={nrqlEditorRef}
-							/>
+							{accountId && (
+								<NRQLEditor
+									className="input-text control"
+									defaultValue={props.query || DEFAULT_QUERY}
+									height={`${editorHeight}px`}
+									onChange={e => {
+										setUserQuery(e.value || "");
+									}}
+									onSubmit={e => {
+										setUserQuery(e.value!);
+										executeNRQL(accountId, e.value!);
+									}}
+									useSimpleEditor={!supports.enhancedEditor}
+									ref={nrqlEditorRef}
+									accountId={accountId}
+								/>
+							)}
 						</ResizeEditorContainer>
 						<ActionRow>
 							<DropdownContainer></DropdownContainer>
@@ -532,7 +542,11 @@ export const NRQLPanel = (props: {
 								)}
 							</>
 						)}
-						{noResults && <div style={{ textAlign: "center" }}>No results found</div>}
+						{noResults && (
+							<div style={{ textAlign: "center" }}>
+								<NRQLResultsJSON results={noResultResponse} />
+							</div>
+						)}
 						{nrqlError && (
 							<div className="no-matches" style={{ margin: "0", fontStyle: "unset" }}>
 								{nrqlError}

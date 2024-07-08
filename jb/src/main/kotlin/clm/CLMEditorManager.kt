@@ -150,9 +150,9 @@ class Metrics {
 
     val nameMapping: MethodLevelTelemetryNotifications.View.MetricTimesliceNameMapping
         get() = MethodLevelTelemetryNotifications.View.MetricTimesliceNameMapping(
-            averageDuration?.metricTimesliceName,
-            sampleSize?.metricTimesliceName,
-            errorRate?.metricTimesliceName,
+            averageDuration?.facet?.firstOrNull() ?: "",
+            sampleSize?.facet?.firstOrNull() ?: "",
+            errorRate?.facet?.firstOrNull() ?: "",
             sampleSize?.source
         )
 }

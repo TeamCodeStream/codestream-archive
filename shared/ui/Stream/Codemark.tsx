@@ -50,7 +50,6 @@ import {
 	getTeamTagsHash,
 	getUserByCsId,
 	getUsernames,
-	isUnread,
 } from "../store/users/reducer";
 import { emptyArray, range } from "../utils";
 import { HostApi } from "../webview-api";
@@ -139,7 +138,6 @@ interface ConnectedProps {
 	codeError?: CSCodeError;
 	post?: CSPost;
 	moveMarkersEnabled: boolean;
-	unread: boolean;
 	isAdmin: boolean;
 }
 
@@ -914,7 +912,6 @@ export class Codemark extends React.Component<Props, State> {
 
 		const color = codemark.pinned ? (codemark.status === "closed" ? "purple" : "green") : "gray";
 		const renderedTags = hideTags ? null : this.renderTags(codemark);
-		const unread = this.props.unread ? " unread" : "";
 		return (
 			<div
 				id={`codemark-${codemark.id}`}
@@ -941,21 +938,6 @@ export class Codemark extends React.Component<Props, State> {
 								className="subtle"
 								align={{ offset: [20, 0] }}
 							/>
-						)}
-						{(codemark.numReplies > 0 || unread) && (
-							<span
-								className={`badge${unread}`}
-								style={{ marginLeft: "10px", flexGrow: 0, flexShrink: 0 }}
-							>
-								{codemark.numReplies > 0 ? (
-									codemark.numReplies
-								) : (
-									<>
-										&nbsp;
-										<span className="dot" />
-									</>
-								)}
-							</span>
 						)}
 						{false && lines && (
 							<span
@@ -2165,7 +2147,6 @@ const mapStateToProps = (state: CodeStreamState, props: InheritedProps): Connect
 			? getCodeError(state.codeErrors, codemark.codeErrorId)
 			: undefined;
 
-	const unread = isUnread(state, codemark!);
 	return {
 		post,
 		review,
@@ -2180,7 +2161,6 @@ const mapStateToProps = (state: CodeStreamState, props: InheritedProps): Connect
 		currentUser: users[session.userId!] as CSMe,
 		author: author as CSUser,
 		codemarkKeybindings: preferences.codemarkKeybindings || EMPTY_OBJECT,
-		unread,
 		teammates: getTeamMembers(state),
 		usernames: getUsernames(state),
 		teamTagsHash,

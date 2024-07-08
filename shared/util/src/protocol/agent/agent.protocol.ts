@@ -4,7 +4,6 @@ import { InitializeResult, RequestType, WorkspaceFolder } from "vscode-languages
 
 import { LoginResponse } from "./agent.protocol.auth";
 import { CreateCompanyRequest, CreateCompanyResponse } from "./agent.protocol.companies";
-import { Unreads } from "./agent.protocol.notifications";
 import { ThirdPartyProviders } from "./agent.protocol.providers";
 import {
 	CSAccessTokenType,
@@ -238,7 +237,6 @@ export interface BootstrapResponse {
 	teams: CSTeam[];
 	companies: CSCompany[];
 	users: CSUser[];
-	unreads: Unreads;
 	providers: ThirdPartyProviders;
 }
 
@@ -321,6 +319,8 @@ export type TelemetryEventName =
 	| "codestream/nrql/query submitted"
 	| "codestream/nrql/visualization changed"
 	| "codestream/nrql/webview displayed"
+	| "codestream/notifications/repo_following_option changed"
+	| "codestream/notifications/service_notification_option changed"
 	| "codestream/o11y displayed"
 	| "codestream/o11y_fetch failed"
 	| "codestream/related_service_link clicked"

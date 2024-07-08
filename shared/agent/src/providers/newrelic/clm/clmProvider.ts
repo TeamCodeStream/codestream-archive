@@ -108,12 +108,14 @@ export class ClmProvider implements Disposable {
 		return repoEntitySpanDataExistsResponse?.find(_ => _ && _["entity.guid"] != null) != null;
 	}
 
+	private fltRequest: Promise<any> = Promise.resolve();
 	@lspHandler(GetFileLevelTelemetryRequestType)
 	@log()
-	getFileLevelTelemetry(
+	async getFileLevelTelemetry(
 		request: GetFileLevelTelemetryRequest
 	): Promise<GetFileLevelTelemetryResponse | NRErrorResponse | undefined> {
-		return this.clmManager.getFileLevelTelemetry(request);
+		await this.fltRequest;
+		return (this.fltRequest = this.clmManager.getFileLevelTelemetry(request));
 	}
 
 	@lspHandler(GetMethodLevelTelemetryRequestType)
