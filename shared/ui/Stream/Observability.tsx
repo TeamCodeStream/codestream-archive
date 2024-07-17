@@ -391,9 +391,7 @@ export const Observability = React.memo((props: Props) => {
 		}
 	};
 
-	const _bootstrapNrCapabilities = async () => {
-		dispatch(bootstrapNrCapabilities());
-	};
+	const _bootstrapNrCapabilities = async () => {};
 
 	const getEntityCount = async (force = false) => {
 		try {
@@ -462,6 +460,13 @@ export const Observability = React.memo((props: Props) => {
 			disposable1 && disposable1.dispose();
 		};
 	});
+
+	useEffect(() => {
+		if (currentEntityAccounts && currentEntityAccounts.length > 0) {
+			const accountIds = currentEntityAccounts.map(_ => _.accountId);
+			dispatch(bootstrapNrCapabilities(accountIds));
+		}
+	}, [currentEntityAccounts]);
 
 	useEffect(() => {
 		// must use a type check for === false or we might get a double update when previousNewRelicIsConnected is undefined (before its set)
