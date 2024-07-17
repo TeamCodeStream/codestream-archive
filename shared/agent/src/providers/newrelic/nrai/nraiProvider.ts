@@ -21,7 +21,9 @@ enum TRIAL_STATUS {
 
 @lsp
 export class NraiProvider implements Disposable {
-	constructor(private graphqlClient: NewRelicGraphqlClient) {}
+	constructor(private graphqlClient: NewRelicGraphqlClient) {
+		this.graphqlClient.addHeader("Nerd-Graph-Unsafe-Experimental-Opt-In", "PreReleaseProgram");
+	}
 
 	@lspHandler(GetNewRelicAIEligibilityRequestType)
 	@log()
@@ -111,10 +113,6 @@ export class NraiProvider implements Disposable {
 				}`,
 				{
 					readableId: "nraiPreview",
-				},
-				undefined,
-				{
-					unsafeExperimentalNamespaces: ["PreReleaseProgram"],
 				}
 			);
 			return !!data?.actor?.preReleaseProgram?.program?.submission?.accepted;
@@ -146,10 +144,6 @@ export class NraiProvider implements Disposable {
 				}`,
 				{
 					readableId: "nraiTrial",
-				},
-				undefined,
-				{
-					unsafeExperimentalNamespaces: ["PreReleaseProgram"],
 				}
 			);
 			return data?.actor?.preReleaseProgram?.trialStatus?.status === TRIAL_STATUS.IN_TRIAL;

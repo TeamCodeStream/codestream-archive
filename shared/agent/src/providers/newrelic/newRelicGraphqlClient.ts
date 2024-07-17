@@ -284,18 +284,12 @@ export class NewRelicGraphqlClient implements Disposable {
 	private async clientRequestWrap<T>(
 		query: string,
 		variables: Record<string, string>,
-		useOtherRegion?: boolean,
-		extraValues?: {
-			unsafeExperimentalNamespaces?: string[];
-		}
+		useOtherRegion?: boolean
 	) {
 		const client = await this.client(useOtherRegion);
 		try {
 			//throw new Error("oops"); // uncomment to test roadblock
-			const ns = extraValues?.unsafeExperimentalNamespaces || [];
-			const requestHeaders =
-				ns.length > 0 ? { "nerd-graph-unsafe-experimental-opt-in": ns.join(",") } : undefined;
-			return await client.request<T>(query, variables, requestHeaders);
+			return await client.request<T>(query, variables);
 			// fetchCore will have retried 3 times by now
 		} catch (ex) {
 			if (isInvalidInputErrorResponse(ex)) {
@@ -373,10 +367,7 @@ export class NewRelicGraphqlClient implements Disposable {
 	async query<T = any>(
 		query: string,
 		variables: any = undefined,
-		isMultiRegion = false,
-		extraValues?: {
-			unsafeExperimentalNamespaces?: string[];
-		}
+		isMultiRegion = false
 	): Promise<T> {
 		if (this.providerInfo && this.providerInfo.tokenError) {
 			delete this._client;
@@ -389,24 +380,14 @@ export class NewRelicGraphqlClient implements Disposable {
 		try {
 			let potentialResponse, potentialOtherResponse;
 			if (isMultiRegion) {
-				const currentRegionPromise = await this.clientRequestWrap<T>(
-					query,
-					variables,
-					false,
-					extraValues
-				);
-				const otherRegionPromise = await this.clientRequestWrap<T>(
-					query,
-					variables,
-					true,
-					extraValues
-				);
+				const currentRegionPromise = await this.clientRequestWrap<T>(query, variables, false);
+				const otherRegionPromise = await this.clientRequestWrap<T>(query, variables, true);
 				[potentialResponse, potentialOtherResponse] = await Promise.all([
 					currentRegionPromise,
 					otherRegionPromise,
 				]);
 			} else {
-				potentialResponse = await this.clientRequestWrap<T>(query, variables, false, extraValues);
+				potentialResponse = await this.clientRequestWrap<T>(query, variables, false);
 			}
 			// GraphQL returns happy HTTP 200 response for api level errors
 			if (potentialOtherResponse) {
