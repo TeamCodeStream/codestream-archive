@@ -25,8 +25,14 @@ interface Props {
 }
 
 export const NRQLResultsTable = (props: Props) => {
-	// [columnIndex, rowIndex]]
 	const [showCopyIcon, setShowCopyIcon] = useState<[number, number][]>([]);
+
+	const results = useMemo(() => {
+		return props.results.map(_ => {
+			const { facet, ...rest } = _;
+			return rest;
+		});
+	}, [props.results]);
 
 	const hasKey = (obj, key) => {
 		return obj.hasOwnProperty(key);
@@ -58,6 +64,10 @@ export const NRQLResultsTable = (props: Props) => {
 			}
 		} else if (typeof cellValue === "string") {
 			value = cellValue;
+		} else if (typeof cellValue === "object" && cellValue !== null) {
+			let keys = Object.keys(cellValue);
+			let variableKey = parseInt(keys[0], 10);
+			value = String(cellValue[variableKey]);
 		} else {
 			value = String(cellValue);
 		}
@@ -215,11 +225,11 @@ export const NRQLResultsTable = (props: Props) => {
 		return { columnWidths, columnCount, columnHeaders, resultsWithHeaders, rowHeights };
 	};
 
-	const gridData = useMemo(() => generateGridData(props.results), [props.results]);
+	const gridData = useMemo(() => generateGridData(results), [results]);
 
 	return (
 		<>
-			{props.results && props.results.length > 0 && (
+			{results && results.length > 0 && (
 				<>
 					<GridWindow
 						columnCount={gridData.columnCount}

@@ -132,7 +132,21 @@ export class NrNRQLProvider {
 	}
 
 	replaceDoubleQuotesWithSingle(query: string): string {
-		return query.replace(/"/g, "'");
+		let result = "";
+		let insideSingleQuotes = false;
+
+		for (let i = 0; i < query.length; i++) {
+			if (query[i] === "'") {
+				insideSingleQuotes = !insideSingleQuotes;
+			}
+			if (query[i] === '"' && !insideSingleQuotes) {
+				result += "'";
+			} else {
+				result += query[i];
+			}
+		}
+
+		return result;
 	}
 
 	/**
@@ -522,7 +536,16 @@ export class NrNRQLProvider {
 			return { selected: "line", enabled: ["table", "json", "line", "area"] };
 		}
 		if (isFacet) {
-			return { selected: "bar", enabled: ["bar", "json", "pie", "table"] };
+			const dataKeys = Object.keys(results[0] || {}).filter(
+				_ => _ !== "facet" && _ !== metadata.facet
+			);
+
+			// Doesn't make sense to have multiple dataKeys for pie or bar charts
+			if (dataKeys.length > 1) {
+				return { selected: "table", enabled: ["table", "json"] };
+			} else {
+				return { selected: "bar", enabled: ["bar", "json", "pie", "table"] };
+			}
 		}
 		return { selected: "table", enabled: ["table", "json"] };
 	}

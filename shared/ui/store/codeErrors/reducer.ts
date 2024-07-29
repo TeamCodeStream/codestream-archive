@@ -19,6 +19,7 @@ const initialState: CodeErrorsState = {
 	grokError: undefined,
 	functionToEditFailed: false,
 	demoMode: { enabled: false, count: 0 },
+	discussion: { threadId: "", comments: [] },
 };
 
 export function reduceCodeErrors(
@@ -58,6 +59,10 @@ export function reduceCodeErrors(
 				demoMode: state.demoMode,
 			};
 		}
+
+		case CodeErrorsActionsTypes.SetDiscussion: {
+			return { ...state, discussion: action.payload };
+		}
 		case CodeErrorsActionsTypes.SetFunctionToEdit: {
 			if (action.payload) {
 				console.debug("nraiFunctionToEdit", action.payload);
@@ -76,9 +81,9 @@ export function reduceCodeErrors(
 		case CodeErrorsActionsTypes.SetFunctionToEditFailed: {
 			return { ...state, functionToEditFailed: action.payload };
 		}
-		case CodeErrorsActionsTypes.SetGrokError: {
-			return { ...state, grokError: action.payload };
-		}
+		// case CodeErrorsActionsTypes.SetGrokError: {
+		// 	return { ...state, grokError: action.payload };
+		// }
 		case CodeErrorsActionsTypes.SetGrokRepliesLength: {
 			return { ...state, grokRepliesLength: action.payload };
 		}
