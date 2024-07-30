@@ -391,8 +391,6 @@ export const Observability = React.memo((props: Props) => {
 		}
 	};
 
-	const _bootstrapNrCapabilities = async () => {};
-
 	const getEntityCount = async (force = false) => {
 		try {
 			const { entityCount } = await HostApi.instance.send(GetEntityCountRequestType, { force });
@@ -412,12 +410,7 @@ export const Observability = React.memo((props: Props) => {
 		setGenericError(undefined);
 		setLoadingEntities(currentRepoId);
 		try {
-			await Promise.all([
-				loadAssignments(),
-				fetchObservabilityRepos(force),
-				getEntityCount(true),
-				_bootstrapNrCapabilities(),
-			]);
+			await Promise.all([loadAssignments(), fetchObservabilityRepos(force), getEntityCount(true)]);
 			console.debug(`o11y: Promise.all finished`);
 		} finally {
 			setLoadingEntities(undefined);
