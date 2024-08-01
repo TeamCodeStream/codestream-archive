@@ -48,7 +48,18 @@ function getPostBuildCopy(args: Args): CopyStuff[] {
 		result.push({
 			from: path.join(getDepsRoot(args.watchMode), "node_modules/**"),
 			to: nodeModulesDest,
-			options: { ignore: ["**/@newrelic/security-agent/**"] }, // Path too long for windows
+			options: {
+				ignore: [
+					"**/@newrelic/security-agent/**",
+					"**/react-native/**",
+					"**/jsc-android/**",
+					"**/@babel/**",
+					"**/@react-native/**",
+					"**/react-devtools-core/**",
+					"**/@react-native-community/**",
+					"/**/@types/**",
+				],
+			}, // Path too long for windows
 		});
 	} else {
 		symlinkSync(path.join(getDepsRoot(args.watchMode), "node_modules"), nodeModulesDest);

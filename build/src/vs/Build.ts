@@ -19,7 +19,7 @@ export default function (vsRootPath: string) {
 				[
 					`CodeStream.VisualStudio.sln`,
 					"/t:restore,rebuild",
-					"/p:Configuration=Debug",
+					"/p:Configuration=Release",
 					"/verbosity:quiet",
 					"/p:Platform=x64",
 					"/p:DeployExtension=False"
@@ -27,43 +27,17 @@ export default function (vsRootPath: string) {
 				{ stdio: "inherit", cwd: `${vsRootPath}\\src\\` }
 			);
 
-			execSync(`dotnet tool restore --ignore-failed-sources`, {
-				cwd: `${vsRootPath}\\src`,
-				stdio: "inherit"
+			execSync(`${xunit} CodeStream.VisualStudio.UnitTests.dll`, {
+				stdio: "inherit",
+				cwd: `${vsRootPath}\\src\\CodeStream.VisualStudio.UnitTests\\bin\\x64\\Release`
 			});
-
-			execSync(
-				`dotnet coverlet "CodeStream.VisualStudio.UnitTests.dll" --target "${xunit}" --targetargs "CodeStream.VisualStudio.UnitTests.dll" --exclude-by-file "**/Annotations/Annotations.cs" --format cobertura`,
-				{
-					cwd: `${vsRootPath}\\src\\CodeStream.VisualStudio.UnitTests\\bin\\x64\\Debug`,
-					stdio: "inherit"
-				}
-			);
-
-			execSync(
-				`dotnet reportgenerator "-reports:coverage.cobertura.xml" "-targetdir:coveragereport" "-reporttypes:Html;TeamCitySummary"`,
-				{
-					cwd: `${vsRootPath}\\src\\CodeStream.VisualStudio.UnitTests\\bin\\x64\\Debug`,
-					stdio: "inherit"
-				}
-			);
 
 			if (!fs.existsSync(artifactsPath)) {
 				fs.mkdirSync(artifactsPath, { recursive: true });
 			}
 
-			try {
-				archiveFolder(
-					`${vsRootPath}\\src\\CodeStream.VisualStudio.UnitTests\\bin\\x64\\Debug\\coveragereport`,
-					`${artifactsPath}\\coveragereport.zip`
-				);
-			} catch (err) {
-				consoul.warn("Unable to archive CoverageReport data -- allowing process to continue");
-				consoul.warn(`${err}`);
-			}
-
 			fs.copyFileSync(
-				`${vsRootPath}\\src\\CodeStream.VisualStudio.Vsix.x64\\bin\\x64\\Debug\\codestream-vs-22.vsix`,
+				`${vsRootPath}\\src\\CodeStream.VisualStudio.Vsix.x64\\bin\\x64\\Release\\codestream-vs-22.vsix`,
 				`${artifactsPath}\\codestream-vs-22.vsix`
 			);
 		} catch (error) {
