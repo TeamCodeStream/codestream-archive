@@ -21,6 +21,7 @@ export class UrlManager {
 	async openUrl(request: AgentOpenUrlRequest) {
 		const cc = Logger.getCorrelationContext();
 		try {
+			Logger.log(`Opened URL: ${request.url}`);
 			await openUrl(request.url);
 		} catch (ex) {
 			Logger.error(ex, cc);
