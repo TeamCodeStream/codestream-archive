@@ -185,10 +185,10 @@ export const currentNrUserIdSelector = createSelector(
 
 	(users, session) => {
 		if (!session.userId) {
-			return false;
+			return undefined;
 		}
 		const me = users[session.userId];
-		return me.nrUserId;
+		return me.nrUserId.toString();
 	}
 );
 

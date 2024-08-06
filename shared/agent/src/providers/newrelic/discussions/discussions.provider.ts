@@ -108,21 +108,18 @@ export class DiscussionsProvider {
 
 			const updateCommentQuery = `
 				mutation($commentId: ID!, $body: String!) {
-					collaborationUpdateComment(id: $commendId body: $body) {
+					collaborationUpdateComment(id: $commentId, body: $body) {
 						id
 					}
 				}`;
 
-			const updateCommentResponse = await this.graphqlClient.mutate<BaseCollaborationResponse>(
-				updateCommentQuery,
-				{
-					commentId,
-					body,
-				}
-			);
+			const _ = await this.graphqlClient.mutate<BaseCollaborationResponse>(updateCommentQuery, {
+				commentId,
+				body,
+			});
 
 			return {
-				commentId: updateCommentResponse.collaborationUpdateComment.id,
+				success: true,
 			};
 		} catch (ex) {
 			ContextLogger.warn("updateCollaborationComment failure", {
@@ -442,7 +439,7 @@ export class DiscussionsProvider {
 				commentEntity = await this.parseComment(commentEntity);
 			}
 
-			const comments = commentEntities.filter(e => e.creator.userId != 0);
+			const comments = commentEntities.filter(e => e.creator.userId != "0");
 
 			return {
 				threadId: bootstrapResponse.threadId,
@@ -742,7 +739,7 @@ export class DiscussionsProvider {
 				})
 				.join("\n\n") ?? "";
 		comment.creator.name = "AI";
-		comment.creator.userId = -1;
+		comment.creator.userId = "-1";
 
 		return comment;
 	}

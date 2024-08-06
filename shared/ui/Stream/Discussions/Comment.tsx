@@ -1,11 +1,9 @@
 import {
 	CollaborationComment,
 	CreateCollaborationCommentRequestType,
-	DeleteCollaborationCommentRequestType,
 	UpdateCollaborationCommentRequestType,
 } from "@codestream/protocols/agent";
 import { Headshot } from "@codestream/webview/src/components/Headshot";
-import { CodeStreamState } from "@codestream/webview/store";
 import { useAppSelector, useDidMount } from "@codestream/webview/utilities/hooks";
 import { escapeHtml, replaceHtml, transformMentions } from "@codestream/webview/utils";
 import React, { forwardRef, Ref, useEffect, useState } from "react";
@@ -14,19 +12,17 @@ import Icon from "../Icon";
 import { MarkdownText } from "../MarkdownText";
 import { MessageInput } from "../MessageInput";
 import { AddReactionIcon } from "../Reactions";
-import { CSCodeError, CSUser } from "@codestream/protocols/api";
+import { CSCodeError } from "@codestream/protocols/api";
 import { AskGrok } from "../NRAI/AskGrok";
 import Tooltip from "../Tooltip";
 import { ButtonRow } from "@codestream/webview/src/components/Dialog";
 import { Button } from "@codestream/webview/src/components/Button";
 import { MenuItem } from "@codestream/webview/src/components/controls/InlineMenu";
-import {
-	currentNrUserIdSelector,
-	currentUserIsAdminSelector,
-} from "@codestream/webview/store/users/reducer";
+import { currentNrUserIdSelector } from "@codestream/webview/store/users/reducer";
 import { HostApi } from "@codestream/webview/webview-api";
-import { useDispatch } from "react-redux";
 import { Attachments } from "../Attachments";
+import Menu from "../Menu";
+import { KebabIcon } from "../Codemark/BaseCodemark";
 
 export const AuthorInfo = styled.div`
 	display: flex;
@@ -140,17 +136,10 @@ export type CommentInputProps = {
 };
 
 export const CommentInput = (props: CommentInputProps) => {
-	const dispatch = useDispatch();
 	const [text, setText] = useState("");
 
 	const [isAskGrokOpen, setIsAskGrokOpen] = useState(false);
 	const [isLoadingComment, setIsLoadingComment] = useState(false);
-
-	const derivedState = useAppSelector((state: CodeStreamState) => {
-		return {
-			isLoading: props.isLoading ?? false,
-		};
-	});
 
 	const discussion = useAppSelector(state => state.discussions.activeDiscussion);
 
@@ -174,11 +163,13 @@ export const CommentInput = (props: CommentInputProps) => {
 
 		if (response.nrError) {
 			// TODO do something with the error
+			console.error(response.nrError);
+
 			setIsLoadingComment(false);
 		}
 
 		if (response.comment) {
-			// dispatch(addComment(response.comment)); // Obsolete with websocket handling new messages
+			// comments appear through websocket handling
 			setText("");
 		}
 	};
@@ -234,26 +225,7 @@ export const CommentInput = (props: CommentInputProps) => {
 };
 
 export const Comment = forwardRef((props: CommentProps, ref: Ref<HTMLDivElement>) => {
-	const derivedState = useAppSelector((state: CodeStreamState) => {
-		const { users } = state;
-		let authorAsUser: CSUser | undefined;
-
-		for (let user of Object.values(users)) {
-			if (user.nrUserId === props.comment.creator.userId) {
-				authorAsUser = user;
-				break;
-			}
-		}
-
-		return {
-			author: authorAsUser,
-			isLoading: props.isLoading ?? false,
-		};
-	});
-	const currentUserId = useAppSelector((state: CodeStreamState) => state.session.userId!);
 	const currentNrUserId = useAppSelector(currentNrUserIdSelector);
-	const currentUserIsAdmin = useAppSelector(currentUserIsAdminSelector);
-
 	const [isEditing, setIsEditing] = useState<boolean>(false);
 	const [newReplyText, setNewReplyText] = useState<string>("");
 	const postText = props.comment.body;
@@ -263,36 +235,40 @@ export const Comment = forwardRef((props: CommentProps, ref: Ref<HTMLDivElement>
 		setNewReplyText(escapedPostText);
 	});
 
-	const deleteComment = async () => {
-		const response = await HostApi.instance.send(DeleteCollaborationCommentRequestType, {
-			commentId: props.comment.id,
-		});
-	};
+	// const deleteComment = async () => {
+	// 	const response = await HostApi.instance.send(DeleteCollaborationCommentRequestType, {
+	// 		commentId: props.comment.id,
+	// 	});
+	// };
 
 	const updateComment = async () => {
 		const response = await HostApi.instance.send(UpdateCollaborationCommentRequestType, {
 			commentId: props.comment.id,
 			body: replaceHtml(newReplyText)!,
 		});
+
+		if (response.nrError) {
+			console.error(response.nrError);
+		}
+
+		setIsEditing(false);
+		// TODO: handle response somehow?
 	};
 
 	const menuItems: MenuItem[] = [];
 
-	// Need to line up user IDs.
-	// currentUserIsAdmin is not a good check for this as it doesn't seem to match NR1 expectations.
-	//
-	// if (props.comment.creator.userId === currentNrUserId || currentUserIsAdmin) {
-	// 	menuItems.push({
-	// 		label: "Edit",
-	// 		key: "edit",
-	// 		action: () => setIsEditing(true),
-	// 	});
-	// }
+	if (props.comment.creator.userId === currentNrUserId) {
+		menuItems.push({
+			label: "Edit",
+			key: "edit",
+			action: () => setIsEditing(true),
+		});
+	}
 
 	// Need to line up user IDs.
 	// currentUserIsAdmin is not a good check for this as it doesn't seem to match NR1 expectations.
 	//
-	// if (props.comment.creator.userId === currentNrUserId || currentUserIsAdmin) {
+	// if (props.comment.creator.userId === currentNrUserId) {
 	// 	menuItems.push({
 	// 		label: "Delete",
 	// 		key: "delete",
@@ -333,37 +309,39 @@ export const Comment = forwardRef((props: CommentProps, ref: Ref<HTMLDivElement>
 				<AuthorInfo style={{ fontWeight: 700 }}>
 					{props.comment.creator && <Headshot size={20} person={props.comment.creator} />}
 					<span className="reply-author">{props.comment.creator.name}</span>
-					{/* <div style={{ marginLeft: "auto", whiteSpace: "nowrap" }}>
-						{menuState.open && (
-							<Menu
-								target={menuState.target}
-								action={() => setMenuState({ open: false })}
-								items={menuItems}
-								align="dropdownRight"
-							/>
-						)}
-						<KebabIcon
-							className="kebab"
-							onClick={e => {
-								e.preventDefault();
-								e.stopPropagation();
-								if (menuState.open) {
-									setMenuState({ open: false });
-								} else {
-									setMenuState({ open: true, target: e.currentTarget });
-								}
-							}}
-						>
-							<Icon name="kebab-vertical" className="clickable" />
-						</KebabIcon>
-					</div> */}
+					{menuItems?.length > 0 && (
+						<div style={{ marginLeft: "auto", whiteSpace: "nowrap" }}>
+							{menuState.open && (
+								<Menu
+									target={menuState.target}
+									action={() => setMenuState({ open: false })}
+									items={menuItems}
+									align="dropdownRight"
+								/>
+							)}
+							<KebabIcon
+								className="kebab"
+								onClick={e => {
+									e.preventDefault();
+									e.stopPropagation();
+									if (menuState.open) {
+										setMenuState({ open: false });
+									} else {
+										setMenuState({ open: true, target: e.currentTarget });
+									}
+								}}
+							>
+								<Icon name="kebab-vertical" className="clickable" />
+							</KebabIcon>
+						</div>
+					)}
 				</AuthorInfo>
 
 				{isEditing && (
 					<>
 						<ComposeWrapper>
 							<MessageInput
-								text={escapedPostText}
+								text={newReplyText}
 								onChange={setNewReplyText}
 								onSubmit={updateComment}
 								multiCompose

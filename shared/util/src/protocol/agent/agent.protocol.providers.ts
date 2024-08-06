@@ -1441,7 +1441,7 @@ export interface CollaborationComment {
 	creator: {
 		email?: string;
 		name: string;
-		userId: number;
+		userId: string;
 	};
 	attachments?: CollaborationAttachment[];
 }
@@ -1575,7 +1575,7 @@ export interface UpdateCollaborationCommentRequest {
 }
 
 export interface UpdateCollaborationCommentResponse {
-	commentId?: string;
+	success?: boolean;
 	nrError?: NRErrorResponse;
 }
 
