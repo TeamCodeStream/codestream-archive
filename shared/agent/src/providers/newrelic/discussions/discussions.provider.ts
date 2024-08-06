@@ -373,6 +373,7 @@ export class DiscussionsProvider {
 											name
 											userId
 										}
+										externalApplicationType
 									}
 								}
 							}
@@ -411,6 +412,7 @@ export class DiscussionsProvider {
 											name
 											userId
 										}
+										externalApplicationType											
 									}
 								}
 							}
@@ -439,7 +441,7 @@ export class DiscussionsProvider {
 				commentEntity = await this.parseComment(commentEntity);
 			}
 
-			const comments = commentEntities.filter(e => e.creator.userId != 0);
+			const comments = commentEntities.filter(e => e.creator.userId !== "0");
 
 			return {
 				threadId: bootstrapResponse.threadId,
@@ -665,6 +667,11 @@ export class DiscussionsProvider {
 	 * @returns `Promise<CollaborationComment>`
 	 */
 	private async parseCommentForGrok(comment: CollaborationComment): Promise<CollaborationComment> {
+		if (comment.externalApplicationType === "NR_BOT" && comment.creator.userId === "0") {
+			comment.creator.name = "AI";
+			comment.creator.userId = "-1";
+		}
+
 		const grokMatch = new RegExp(this.grokResponseRegExp).exec(comment.body);
 
 		if (!grokMatch) {
@@ -680,8 +687,6 @@ export class DiscussionsProvider {
 					return `${m.content}`;
 				})
 				.join("\n\n") ?? "";
-		comment.creator.name = "AI";
-		comment.creator.userId = -1;
 
 		return comment;
 	}

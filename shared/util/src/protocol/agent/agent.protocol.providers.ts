@@ -1426,6 +1426,12 @@ export const GetObservabilityErrorsWithoutReposRequestType = new RequestType<
 	void
 >("codestream/newrelic/errorsWithoutRepos");
 
+export interface CollaborationAttachment {
+	id: string;
+	fileName: string;
+	filePath: string;
+}
+
 export interface CollaborationComment {
 	id: string;
 	body: string;
@@ -1435,8 +1441,10 @@ export interface CollaborationComment {
 	creator: {
 		email?: string;
 		name: string;
-		userId: number;
+		userId: string;
 	};
+	externalApplicationType?: string;
+	attachments?: CollaborationAttachment[];
 }
 
 export interface InitiateNrAiRequest {
