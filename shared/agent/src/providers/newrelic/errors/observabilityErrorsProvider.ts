@@ -64,6 +64,17 @@ export type ErrorEventApiResponse<T> = {
 	};
 };
 
+const timeWindowToMs: Record<string, number> = {
+	[CodeErrorTimeWindow.HalfHour]: 1000 * 60 * 30,
+	[CodeErrorTimeWindow.Hour]: 1000 * 60 * 60,
+	[CodeErrorTimeWindow.ThreeHours]: 1000 * 60 * 60 * 3,
+	[CodeErrorTimeWindow.SixHours]: 1000 * 60 * 60 * 6,
+	[CodeErrorTimeWindow.TwelveHours]: 1000 * 60 * 60 * 12,
+	[CodeErrorTimeWindow.OneDay]: 1000 * 60 * 60 * 24,
+	[CodeErrorTimeWindow.ThreeDays]: 1000 * 60 * 60 * 24 * 3,
+	[CodeErrorTimeWindow.SevenDays]: 1000 * 60 * 60 * 24 * 7,
+};
+
 @lsp
 export class ObservabilityErrorsProvider {
 	constructor(
@@ -1373,16 +1384,6 @@ export class ObservabilityErrorsProvider {
 	}
 
 	private adjustErrorGroupUrl(url: string, timeWindow: string): string {
-		const timeWindowToMs: Record<string, number> = {
-			[CodeErrorTimeWindow.HalfHour]: 1000 * 60 * 30,
-			[CodeErrorTimeWindow.Hour]: 1000 * 60 * 60,
-			[CodeErrorTimeWindow.ThreeHours]: 1000 * 60 * 60 * 3,
-			[CodeErrorTimeWindow.SixHours]: 1000 * 60 * 60 * 6,
-			[CodeErrorTimeWindow.TwelveHours]: 1000 * 60 * 60 * 12,
-			[CodeErrorTimeWindow.OneDay]: 1000 * 60 * 60 * 24,
-			[CodeErrorTimeWindow.ThreeDays]: 1000 * 60 * 60 * 24 * 3,
-			[CodeErrorTimeWindow.SevenDays]: 1000 * 60 * 60 * 24 * 7,
-		};
 		if (!Object.keys(timeWindowToMs).includes(timeWindow)) return url;
 		const u = new URL(url);
 		u.searchParams.set("platform[timeRange][duration]", timeWindowToMs[timeWindow].toString());
