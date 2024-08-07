@@ -1,5 +1,12 @@
 # Change Log
 
+## [15.13.1] - 2024-8-7
+
+### Fixed
+
+- Fix migrated AI posts not showing up
+- Fix issue with getting logged out after closing IDE
+
 ## [15.13.0] - 2024-8-1
 
 ### Changed
