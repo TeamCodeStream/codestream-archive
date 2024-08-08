@@ -11,9 +11,7 @@ import { api } from "@codestream/webview/store/codeErrors/thunks";
 import { getTeamMembers, isCurrentUserInternal } from "@codestream/webview/store/users/reducer";
 import { useAppDispatch, useAppSelector, useDidMount } from "@codestream/webview/utilities/hooks";
 import { HostApi } from "@codestream/webview/webview-api";
-import { invite } from "../actions";
 import { BigTitle, Header, HeaderActions } from "../Codemark/BaseCodemark";
-import { confirmPopup } from "../Confirm";
 import { DropdownButton, DropdownButtonItems } from "../DropdownButton";
 import Icon from "../Icon";
 import { Link } from "../Link";
@@ -41,14 +39,8 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 	const derivedState = useAppSelector((state: CodeStreamState) => {
 		const allTeamMembers = getTeamMembers(state);
 		const teamMembers = allTeamMembers.filter(_ => _.username !== "AI");
-
-		const user = state.users[state.session.userId!];
 		const teamId = state.context.currentTeamId;
 		const team = state.teams[teamId];
-
-		const eligibleJoinCompanies = user?.eligibleJoinCompanies;
-		const eligibleCompany = eligibleJoinCompanies?.find(_ => team.companyId === _.id);
-
 		const company = state.companies[team.companyId];
 
 		return {
@@ -105,49 +97,9 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 				setIsAssigneeChanging(false);
 			}, 1);
 		};
-		// if it's me, or someone that is already on the team -- just assign them without asking to invite
-		if (
-			derivedState.emailAddress.toLowerCase() === emailAddress.toLowerCase() ||
-			derivedState.teamMembers.find(_ => _.email.toLowerCase() === emailAddress.toLowerCase())
-		) {
-			_setAssignee(assigneeType);
-			return;
-		}
 
-		confirmPopup({
-			title: "Invite to CodeStream?",
-			message: (
-				<span>
-					Assign the error to <b>{emailAddress}</b> and invite them to join CodeStream
-				</span>
-			),
-			centered: true,
-			buttons: [
-				{
-					label: "Cancel",
-					className: "control-button btn-secondary",
-				},
-				{
-					label: "Invite",
-					className: "control-button",
-					wait: true,
-					action: () => {
-						dispatch(
-							invite({
-								email: emailAddress,
-								inviteType: "error",
-							})
-						);
-						// HostApi.instance.track("Teammate Invited", {
-						// 	"Invitee Email Address": emailAddress,
-						// 	"Invitation Method": "Error Assignment",
-						// });
-						// "upgrade" them to an invitee
-						_setAssignee("Invitee");
-					},
-				},
-			],
-		});
+		_setAssignee(assigneeType);
+		return;
 	};
 
 	const removeAssignee = async (
@@ -296,7 +248,6 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 	});
 
 	const fetchUsers = async (query: string) => {
-		console.warn("ERIC fetchUsers CodeErrorHeader.ts", query);
 		let _query = query.toLowerCase();
 
 		if (_query.length > 2) {
@@ -312,7 +263,6 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 						email,
 					};
 				});
-				//@ts-ignore
 				setAssigneeSearchResults(users);
 			} catch (error) {
 				setAssigneeSearchResults([]);
@@ -369,8 +319,6 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 		});
 	};
 
-	// console.warn("eric items", items);
-
 	return (
 		<>
 			{!props.isCollapsed && (
@@ -423,6 +371,7 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 							onChangeSearch={debouncedFetchUsers}
 							variant="secondary"
 							size="compact"
+							noSearchTermFilter={true}
 							noChevronDown={!errorGroupHasNoAssignee()}
 						>
 							<div

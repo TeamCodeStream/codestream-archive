@@ -43,6 +43,7 @@ export interface DropdownButtonProps extends ButtonProps {
 	preventStopPropagation?: boolean;
 	onButtonClicked?: Function;
 	noChevronDown?: boolean;
+	noSearchTermFilter?: boolean;
 }
 
 // operates in two modes. if splitDropdown is false (the default), it's a dropdown menu.
@@ -155,6 +156,7 @@ export function DropdownButton(props: React.PropsWithChildren<DropdownButtonProp
 					wrap={props.wrap}
 					isMultiSelect={props.isMultiSelect}
 					itemsRange={props.itemsRange}
+					noSearchTermFilter={props?.noSearchTermFilter}
 				/>
 			)}
 		</Root>
