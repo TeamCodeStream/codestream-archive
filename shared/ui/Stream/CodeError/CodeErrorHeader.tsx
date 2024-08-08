@@ -1,8 +1,8 @@
 import {
 	DidChangeObservabilityDataNotificationType,
-	GetNewRelicAssigneesRequestType,
+	UserSearchRequestType,
 } from "@codestream/protocols/agent";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { OpenUrlRequestType } from "@codestream/protocols/webview";
 import { Headshot } from "@codestream/webview/src/components/Headshot";
 import { HealthIcon } from "@codestream/webview/src/components/HealthIcon";
@@ -26,8 +26,14 @@ import {
 	STATES_TO_DISPLAY_STRINGS,
 } from "./CodeError.Types";
 import { CodeErrorMenu } from "./CodeErrorMenu";
+import { debounce as _debounce } from "lodash-es";
 
 // if child props are passed in, we assume they are the action buttons/menu for the header
+export interface AssigneeSearchResults {
+	id: string;
+	fullName: string;
+	email: string;
+}
 
 export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 	const dispatch = useAppDispatch();
@@ -59,6 +65,9 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 	const [states, setStates] = useState<DropdownButtonItems[] | undefined>(undefined);
 	const [isStateChanging, setIsStateChanging] = useState(false);
 	const [isAssigneeChanging, setIsAssigneeChanging] = useState(false);
+	const [assigneeSearchResults, setAssigneeSearchResults] = useState<
+		AssigneeSearchResults[] | undefined
+	>([]);
 
 	const notify = (emailAddress?: string) => {
 		// if no email address or it's you
@@ -208,7 +217,7 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 		if (props.isCollapsed) return;
 
 		let assigneeItems: DropdownButtonItems[] = [
-			{ type: "search", label: "", placeholder: "Search...", key: "search" },
+			{ type: "search", label: "", placeholder: "Search (3 char min)...", key: "search" },
 		];
 
 		let assigneeEmail;
@@ -244,51 +253,14 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 			});
 		}
 
-		let { users } = await HostApi.instance.send(GetNewRelicAssigneesRequestType, {});
-		if (assigneeEmail) {
-			users = users.filter(_ => _.email !== assigneeEmail);
-		}
-
-		let usersFromGitNotOnTeam = users.filter(ufg => {
-			return !derivedState.teamMembers.some(tm => tm.email === ufg.email) && ufg.group === "GIT";
-		});
-
-		if (usersFromGitNotOnTeam.length && !derivedState.isNonCsOrg) {
-			// take no more than 5
-			usersFromGitNotOnTeam = usersFromGitNotOnTeam.slice(0, 5);
-			assigneeItems.push({ label: "-", key: "sep-git" });
-			assigneeItems.push({
-				label: (
-					<span style={{ fontSize: "10px", fontWeight: "bold", opacity: 0.7 }}>
-						SUGGESTIONS FROM GIT
-					</span>
-				),
-				noHover: true,
-				disabled: true,
-			});
-			assigneeItems = assigneeItems.concat(
-				usersFromGitNotOnTeam.map(_ => {
-					const label = _.displayName || _.email;
-					return {
-						icon: <Headshot size={16} display="inline-block" person={{ email: _.email }} />,
-						key: _.id || `git-${_.email}`,
-						label: label,
-						searchLabel: _.displayName || _.email,
-						subtext: label === _.email ? undefined : _.email,
-						action: () => setAssignee(_.email, "Teammate"),
-					};
-				})
-			);
-		}
-
-		let usersFromCodeStream = derivedState.teamMembers;
+		let usersFromCodeStream = assigneeSearchResults || [];
 
 		if (assigneeEmail) {
 			// if we have an assignee don't re-include them here
 			usersFromCodeStream = usersFromCodeStream.filter(_ => _.email !== assigneeEmail);
 		}
 
-		if (usersFromCodeStream.length) {
+		if (usersFromCodeStream.length && usersFromCodeStream.length > 0) {
 			assigneeItems.push({ label: "-", key: "sep-nr" });
 			assigneeItems.push({
 				label: (
@@ -306,7 +278,7 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 						icon: <Headshot size={16} display="inline-block" person={{ email: _.email }} />,
 						key: _.id,
 						label: _.fullName || _.email,
-						searchLabel: _.fullName || _.username,
+						searchLabel: _.fullName || _.email,
 						subtext: label === _.email ? undefined : _.email,
 						action: () => setAssignee(_.email, "Teammate"),
 					};
@@ -322,6 +294,39 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 		buildStates();
 		buildAssignees();
 	});
+
+	const fetchUsers = async (query: string) => {
+		console.warn("ERIC fetchUsers CodeErrorHeader.ts", query);
+		let _query = query.toLowerCase();
+
+		if (_query.length > 2) {
+			try {
+				const response = await HostApi.instance.send(UserSearchRequestType, { query: _query });
+				const users = response.users.map(user => {
+					const userName = user?.name || user?.email || "";
+					const userId = user.id?.toString() || "";
+					const email = user?.email || "";
+					return {
+						fullName: userName,
+						id: userId,
+						email,
+					};
+				});
+				//@ts-ignore
+				setAssigneeSearchResults(users);
+			} catch (error) {
+				setAssigneeSearchResults([]);
+			}
+		} else {
+			setAssigneeSearchResults([]);
+		}
+	};
+
+	const debouncedFetchUsers = useCallback(_debounce(fetchUsers, 300), []);
+
+	useEffect(() => {
+		buildAssignees();
+	}, [assigneeSearchResults]);
 
 	const title = (props.codeError?.title || "").split(/(\.)/).map(part => (
 		<>
@@ -363,6 +368,8 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 			url,
 		});
 	};
+
+	// console.warn("eric items", items);
 
 	return (
 		<>
@@ -413,6 +420,7 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 						<DropdownButton
 							title="Assignee"
 							items={items}
+							onChangeSearch={debouncedFetchUsers}
 							variant="secondary"
 							size="compact"
 							noChevronDown={!errorGroupHasNoAssignee()}

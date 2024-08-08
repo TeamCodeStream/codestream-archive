@@ -437,7 +437,9 @@ export default class Menu extends Component {
 
 	changeSearchValue = q => {
 		this.setState({ q });
-		if (this.props.onChangeSearch) this.props.onChangeSearch(q);
+		if (this.props.onChangeSearch) {
+			this.props.onChangeSearch(q);
+		}
 	};
 
 	renderSubmenu = (parentItem, grandParentItem, grandGrandParentItem) => {

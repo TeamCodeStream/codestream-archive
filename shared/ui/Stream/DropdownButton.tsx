@@ -28,6 +28,7 @@ export interface DropdownButtonItems {
 export interface DropdownButtonProps extends ButtonProps {
 	items: DropdownButtonItems[];
 	title?: string;
+	onChangeSearch?: Function;
 	spread?: boolean;
 	splitDropdown?: boolean;
 	splitDropdownInstantAction?: boolean;
@@ -147,6 +148,7 @@ export function DropdownButton(props: React.PropsWithChildren<DropdownButtonProp
 					action={maybeToggleMenu}
 					target={buttonRef.current}
 					title={props.title}
+					onChangeSearch={props?.onChangeSearch}
 					items={items}
 					noCloseIcon={props.noCloseIcon}
 					focusOnSelect={buttonRef.current}
