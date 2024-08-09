@@ -4,7 +4,7 @@ import { Mention, MentionsInput } from "react-mentions";
 import { Emoji, emojis } from "./emojis";
 import { debounce as _debounce } from "lodash";
 import Headshot from "./Headshot";
-import { useUserSearch } from "./RequestTypeHooks/UserSearch";
+import { useUserSearch } from "./RequestTypeHooks/useUserSearch";
 
 interface MentionsTextInputProps {
 	onSubmit?: Function;

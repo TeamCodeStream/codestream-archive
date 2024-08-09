@@ -22,7 +22,7 @@ import {
 } from "./CodeError.Types";
 import { CodeErrorMenu } from "./CodeErrorMenu";
 import { debounce as _debounce } from "lodash-es";
-import { useUserSearch } from "../RequestTypeHooks/UserSearch";
+import { useUserSearch } from "../RequestTypeHooks/useUserSearch";
 
 export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 	const dispatch = useAppDispatch();
