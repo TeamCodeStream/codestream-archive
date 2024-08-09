@@ -1,6 +1,5 @@
 import {
 	DidChangeObservabilityDataNotificationType,
-	UserSearchRequestType,
 } from "@codestream/protocols/agent";
 import React, { useCallback, useEffect, useState } from "react";
 import { OpenUrlRequestType } from "@codestream/protocols/webview";
@@ -25,13 +24,14 @@ import {
 } from "./CodeError.Types";
 import { CodeErrorMenu } from "./CodeErrorMenu";
 import { debounce as _debounce } from "lodash-es";
+import { useUserSearch } from "../RequestTypeHooks/UserSearch";
 
 // if child props are passed in, we assume they are the action buttons/menu for the header
-export interface AssigneeSearchResults {
-	id: string;
-	fullName: string;
-	email: string;
-}
+// export interface AssigneeSearchResults {
+// 	id: string;
+// 	fullName: string;
+// 	email: string;
+// }
 
 export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 	const dispatch = useAppDispatch();
@@ -57,9 +57,10 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 	const [states, setStates] = useState<DropdownButtonItems[] | undefined>(undefined);
 	const [isStateChanging, setIsStateChanging] = useState(false);
 	const [isAssigneeChanging, setIsAssigneeChanging] = useState(false);
-	const [assigneeSearchResults, setAssigneeSearchResults] = useState<
-		AssigneeSearchResults[] | undefined
-	>([]);
+	// const [assigneeSearchResults, setAssigneeSearchResults] = useState<
+	// 	AssigneeSearchResults[] | undefined
+	// >([]);
+	const { userSearchResults, fetchUsers } = useUserSearch();
 
 	const notify = (emailAddress?: string) => {
 		// if no email address or it's you
@@ -205,7 +206,7 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 			});
 		}
 
-		let usersFromCodeStream = assigneeSearchResults || [];
+		let usersFromCodeStream = userSearchResults || [];
 
 		if (assigneeEmail) {
 			// if we have an assignee don't re-include them here
@@ -247,36 +248,39 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 		buildAssignees();
 	});
 
-	const fetchUsers = async (query: string) => {
-		let _query = query.toLowerCase();
+	// const fetchUsers = async (query: string) => {
+	// 	let _query = query.toLowerCase();
 
-		if (_query.length > 2) {
-			try {
-				const response = await HostApi.instance.send(UserSearchRequestType, { query: _query });
-				const users = response.users.map(user => {
-					const userName = user?.name || user?.email || "";
-					const userId = user.id?.toString() || "";
-					const email = user?.email || "";
-					return {
-						fullName: userName,
-						id: userId,
-						email,
-					};
-				});
-				setAssigneeSearchResults(users);
-			} catch (error) {
-				setAssigneeSearchResults([]);
-			}
-		} else {
-			setAssigneeSearchResults([]);
-		}
-	};
+	// 	if (_query.length > 2) {
+	// 		try {
+	// 			const response = await HostApi.instance.send(UserSearchRequestType, { query: _query });
+	// 			const users = response.users.map(user => {
+	// 				const userName = user?.name || user?.email || "";
+	// 				const userId = user.id?.toString() || "";
+	// 				const email = user?.email || "";
+	// 				return {
+	// 					fullName: userName,
+	// 					id: userId,
+	// 					email,
+	// 				};
+	// 			});
+	// 			setAssigneeSearchResults(users);
+	// 		} catch (error) {
+	// 			setAssigneeSearchResults([]);
+	// 		}
+	// 	} else {
+	// 		setAssigneeSearchResults([]);
+	// 	}
+	// };
 
-	const debouncedFetchUsers = useCallback(_debounce(fetchUsers, 300), []);
+	const debouncedFetchUsers = useCallback(
+		_debounce(query => fetchUsers(query, "default"), 300),
+		[]
+	);
 
 	useEffect(() => {
 		buildAssignees();
-	}, [assigneeSearchResults]);
+	}, [userSearchResults]);
 
 	const title = (props.codeError?.title || "").split(/(\.)/).map(part => (
 		<>
