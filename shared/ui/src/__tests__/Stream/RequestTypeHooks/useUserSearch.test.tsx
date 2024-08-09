@@ -6,7 +6,7 @@ import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import { HostApi } from "@codestream/webview/webview-api";
 import { UserSearchRequestType } from "@codestream/protocols/agent";
-import { useUserSearch } from "@codestream/webview/stream/RequestTypeHooks/useUserSearch";
+import { useUserSearch } from "@codestream/webview/Stream/RequestTypeHooks/useUserSearch";
 
 jest.mock("@codestream/webview/webview-api");
 
