@@ -1,6 +1,4 @@
-import {
-	DidChangeObservabilityDataNotificationType,
-} from "@codestream/protocols/agent";
+import { DidChangeObservabilityDataNotificationType } from "@codestream/protocols/agent";
 import React, { useCallback, useEffect, useState } from "react";
 import { OpenUrlRequestType } from "@codestream/protocols/webview";
 import { Headshot } from "@codestream/webview/src/components/Headshot";
@@ -26,13 +24,6 @@ import { CodeErrorMenu } from "./CodeErrorMenu";
 import { debounce as _debounce } from "lodash-es";
 import { useUserSearch } from "../RequestTypeHooks/UserSearch";
 
-// if child props are passed in, we assume they are the action buttons/menu for the header
-// export interface AssigneeSearchResults {
-// 	id: string;
-// 	fullName: string;
-// 	email: string;
-// }
-
 export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 	const dispatch = useAppDispatch();
 
@@ -57,9 +48,6 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 	const [states, setStates] = useState<DropdownButtonItems[] | undefined>(undefined);
 	const [isStateChanging, setIsStateChanging] = useState(false);
 	const [isAssigneeChanging, setIsAssigneeChanging] = useState(false);
-	// const [assigneeSearchResults, setAssigneeSearchResults] = useState<
-	// 	AssigneeSearchResults[] | undefined
-	// >([]);
 	const { userSearchResults, fetchUsers } = useUserSearch();
 
 	const notify = (emailAddress?: string) => {
