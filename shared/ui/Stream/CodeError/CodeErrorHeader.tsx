@@ -236,31 +236,6 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 		buildAssignees();
 	});
 
-	// const fetchUsers = async (query: string) => {
-	// 	let _query = query.toLowerCase();
-
-	// 	if (_query.length > 2) {
-	// 		try {
-	// 			const response = await HostApi.instance.send(UserSearchRequestType, { query: _query });
-	// 			const users = response.users.map(user => {
-	// 				const userName = user?.name || user?.email || "";
-	// 				const userId = user.id?.toString() || "";
-	// 				const email = user?.email || "";
-	// 				return {
-	// 					fullName: userName,
-	// 					id: userId,
-	// 					email,
-	// 				};
-	// 			});
-	// 			setAssigneeSearchResults(users);
-	// 		} catch (error) {
-	// 			setAssigneeSearchResults([]);
-	// 		}
-	// 	} else {
-	// 		setAssigneeSearchResults([]);
-	// 	}
-	// };
-
 	const debouncedFetchUsers = useCallback(
 		_debounce(query => fetchUsers(query, "default"), 300),
 		[]
