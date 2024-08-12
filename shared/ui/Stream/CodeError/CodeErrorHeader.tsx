@@ -194,14 +194,14 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 			});
 		}
 
-		let usersFromCodeStream = userSearchResults || [];
+		let _userSearchResults = userSearchResults || [];
 
 		if (assigneeEmail) {
 			// if we have an assignee don't re-include them here
-			usersFromCodeStream = usersFromCodeStream.filter(_ => _.email !== assigneeEmail);
+			_userSearchResults = _userSearchResults.filter(_ => _.email !== assigneeEmail);
 		}
 
-		if (usersFromCodeStream.length && usersFromCodeStream.length > 0) {
+		if (_userSearchResults.length && _userSearchResults.length > 0) {
 			assigneeItems.push({ label: "-", key: "sep-nr" });
 			assigneeItems.push({
 				label: (
@@ -213,7 +213,7 @@ export const CodeErrorHeader = (props: CodeErrorHeaderProps) => {
 				disabled: true,
 			});
 			assigneeItems = assigneeItems.concat(
-				usersFromCodeStream.map(_ => {
+				_userSearchResults.map(_ => {
 					const label = _.fullName || _.email;
 					return {
 						icon: <Headshot size={16} display="inline-block" person={{ email: _.email }} />,

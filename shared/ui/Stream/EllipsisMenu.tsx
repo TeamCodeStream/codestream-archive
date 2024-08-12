@@ -369,7 +369,7 @@ export function EllipsisMenu(props: EllipsisMenuProps) {
 
 	const text = (
 		<span style={{ fontSize: "smaller" }} onClick={demoClick}>
-			{versionStatement} asdfasdf
+			{versionStatement}
 		</span>
 	);
 	menuItems.push({ label: text, action: "", noHover: true, disabled: true });
