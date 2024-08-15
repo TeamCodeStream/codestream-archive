@@ -3,6 +3,7 @@ import {
 	CloseCollaborationThreadRequest,
 	CloseCollaborationThreadRequestType,
 	CloseCollaborationThreadResponse,
+	CollaborationAttachment,
 	CollaborationComment,
 	CreateCollaborationCommentRequest,
 	CreateCollaborationCommentRequestType,
@@ -30,6 +31,7 @@ import { NewRelicGraphqlClient } from "../newRelicGraphqlClient";
 import { generateHash } from "./discussions.utils";
 import { mapNRErrorResponse, parseId } from "../utils";
 import {
+	AttachmentById,
 	BaseCollaborationResponse,
 	BootStrapResponse,
 	CollaborationContext,
@@ -52,10 +54,11 @@ const MAX_MENTIONS = 50;
 @lsp
 export class DiscussionsProvider {
 	// TODO fix brittleness - relies on the properties of the collab-mention tag being in the right order...
-	private collabTagRegex =
-		/<collab-mention.*?data-type="(NR_USER|FILE|NR_BOT)".*?<\/collab-mention>/ims;
+	private collabTagRegex = /<collab-mention.*?data-type="(NR_USER|NR_BOT)".*?<\/collab-mention>/ims;
 	private grokResponseRegExp =
 		/<collab-mention data-type="GROK_RESPONSE" data-mentionable-item-id="([A-za-z0-9-]+)"\/>/gim;
+	private attachmentRegExp =
+		/<collab-mention.*?data-type="FILE".*?data-mentionable-item-id="([A-za-z0-9-]+)".*?<\/collab-mention>/gim;
 
 	constructor(private graphqlClient: NewRelicGraphqlClient) {
 		this.graphqlClient.addHeader("Nerd-Graph-Unsafe-Experimental-Opt-In", "Collaboration,Grok");
@@ -373,6 +376,7 @@ export class DiscussionsProvider {
 											name
 											userId
 										}
+										externalApplicationType
 									}
 								}
 							}
@@ -411,6 +415,7 @@ export class DiscussionsProvider {
 											name
 											userId
 										}
+										externalApplicationType											
 									}
 								}
 							}
@@ -439,7 +444,7 @@ export class DiscussionsProvider {
 				commentEntity = await this.parseComment(commentEntity);
 			}
 
-			const comments = commentEntities.filter(e => e.creator.userId != 0);
+			const comments = commentEntities.filter(e => e.creator.userId !== "0");
 
 			return {
 				threadId: bootstrapResponse.threadId,
@@ -571,9 +576,10 @@ export class DiscussionsProvider {
 	 * @returns `Promise<CollaborationComment>`
 	 */
 	private async parseComment(comment: CollaborationComment): Promise<CollaborationComment> {
-		comment = this.stripComment(comment);
 		comment = this.parseCommentForMentions(comment);
+		comment = await this.parseCommentForAttachments(comment);
 		comment = await this.parseCommentForGrok(comment);
+		comment = this.stripComment(comment);
 
 		return comment;
 	}
@@ -587,10 +593,13 @@ export class DiscussionsProvider {
 	 * @returns `CollaborationComment`
 	 */
 	private stripComment(comment: CollaborationComment): CollaborationComment {
-		// strip trailing <br> from the message body
+		comment.body = comment.body.trim();
+
 		if (comment.body.endsWith("<br>")) {
 			comment.body = comment.body.substring(0, comment.body.length - 4);
 		}
+
+		comment.body = comment.body.trim();
 
 		return comment;
 	}
@@ -633,12 +642,6 @@ export class DiscussionsProvider {
 							comment.body = comment.body.replace(e, " ");
 						}
 						break;
-					case "FILE":
-						comment.body = comment.body.replace(
-							e,
-							`(screenshot attached; viewable through New Relic One)\n`
-						);
-						break;
 					default:
 						Logger.log(`Unknown mention type ${dataType}`);
 						comment.body = comment.body.replace(e, "(unknown mention type)");
@@ -655,6 +658,66 @@ export class DiscussionsProvider {
 		return comment;
 	}
 
+	private async getFileData(fileId: string): Promise<CollaborationAttachment> {
+		try {
+			const getFileQuery = `
+				query($fileId: ID!) {
+					actor {
+						collaboration {
+							fileById(id: $fileId) {
+								id
+								fileName
+								filePath
+							}
+						}
+					}
+				}`;
+
+			const getFileQueryResponse = await this.graphqlClient.query<AttachmentById>(getFileQuery, {
+				fileId: fileId,
+			});
+
+			return getFileQueryResponse.actor.collaboration.fileById;
+		} catch (ex) {
+			ContextLogger.warn("getFileData failure", {
+				fileId,
+				error: ex,
+			});
+
+			throw ex;
+		}
+	}
+
+	/**
+	 * Use `parseComment` instead of this method directly
+	 *
+	 * For a given comment, if it contains a grok mention, retrieve the grok messages
+	 * and replace the comment body with them.
+	 *
+	 * @param comment `CollaborationComment`
+	 * @returns `Promise<CollaborationComment>`
+	 */
+	private async parseCommentForAttachments(
+		comment: CollaborationComment
+	): Promise<CollaborationComment> {
+		const attachmentMatch = new RegExp(this.attachmentRegExp).exec(comment.body);
+
+		if (!attachmentMatch) {
+			return comment;
+		}
+
+		const fileId = attachmentMatch[1];
+		const attachment = await this.getFileData(fileId);
+
+		if (!comment.attachments) {
+			comment.attachments = [];
+		}
+		comment.attachments.push(attachment);
+		comment.body = comment.body.replace(attachmentMatch[0], "");
+
+		return comment;
+	}
+
 	/**
 	 * Use `parseComment` instead of this method directly
 	 *
@@ -665,6 +728,11 @@ export class DiscussionsProvider {
 	 * @returns `Promise<CollaborationComment>`
 	 */
 	private async parseCommentForGrok(comment: CollaborationComment): Promise<CollaborationComment> {
+		if (comment.externalApplicationType === "NR_BOT" && comment.creator.userId === "0") {
+			comment.creator.name = "AI";
+			comment.creator.userId = "-1";
+		}
+
 		const grokMatch = new RegExp(this.grokResponseRegExp).exec(comment.body);
 
 		if (!grokMatch) {
@@ -680,8 +748,6 @@ export class DiscussionsProvider {
 					return `${m.content}`;
 				})
 				.join("\n\n") ?? "";
-		comment.creator.name = "AI";
-		comment.creator.userId = -1;
 
 		return comment;
 	}

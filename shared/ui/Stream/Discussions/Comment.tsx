@@ -8,13 +8,13 @@ import { Headshot } from "@codestream/webview/src/components/Headshot";
 import { CodeStreamState } from "@codestream/webview/store";
 import { useAppSelector, useDidMount } from "@codestream/webview/utilities/hooks";
 import { escapeHtml, replaceHtml, transformMentions } from "@codestream/webview/utils";
-import React, { forwardRef, Ref, useState } from "react";
+import React, { forwardRef, Ref, useEffect, useState } from "react";
 import styled from "styled-components";
 import Icon from "../Icon";
 import { MarkdownText } from "../MarkdownText";
 import { MessageInput } from "../MessageInput";
 import { AddReactionIcon } from "../Reactions";
-import { CSCodeError, CSUser } from "@codestream/protocols/api";
+import { CSCodeError } from "@codestream/protocols/api";
 import { AskGrok } from "../NRAI/AskGrok";
 import Tooltip from "../Tooltip";
 import { ButtonRow } from "@codestream/webview/src/components/Dialog";
@@ -26,6 +26,8 @@ import {
 } from "@codestream/webview/store/users/reducer";
 import { HostApi } from "@codestream/webview/webview-api";
 import { useDispatch } from "react-redux";
+import { Attachments } from "../Attachments";
+import { MentionsTextInput } from "../MentionsTextInput";
 
 export const AuthorInfo = styled.div`
 	display: flex;
@@ -143,6 +145,7 @@ export const CommentInput = (props: CommentInputProps) => {
 	const [text, setText] = useState("");
 
 	const [isAskGrokOpen, setIsAskGrokOpen] = useState(false);
+	const [isLoadingComment, setIsLoadingComment] = useState(false);
 
 	const derivedState = useAppSelector((state: CodeStreamState) => {
 		return {
@@ -150,20 +153,30 @@ export const CommentInput = (props: CommentInputProps) => {
 		};
 	});
 
+	const discussion = useAppSelector(state => state.discussions.activeDiscussion);
+
+	useEffect(() => {
+		if (discussion?.threadId) {
+			setIsLoadingComment(false);
+		}
+	}, [discussion?.comments?.length]);
+
 	const createComment = async () => {
 		if (text.length === 0) return;
+		setIsLoadingComment(true);
 
-		const textForNr = transformMentions(text);
+		const nrFriendlyComment = transformMentions(text);
 
 		const response = await HostApi.instance.send(CreateCollaborationCommentRequestType, {
 			entityGuid: props.entityGuid,
 			errorGroupGuid: props.errorGroupGuid,
 			threadId: props.threadId,
-			body: textForNr,
+			body: nrFriendlyComment,
 		});
 
 		if (response.nrError) {
 			// TODO do something with the error
+			setIsLoadingComment(false);
 		}
 
 		if (response.comment) {
@@ -175,14 +188,8 @@ export const CommentInput = (props: CommentInputProps) => {
 	return (
 		<>
 			{isAskGrokOpen && <AskGrok setText={setText} onClose={() => setIsAskGrokOpen(false)} />}
-			<MessageInput
-				multiCompose
-				text={text}
-				placeholder="Add a comment..."
-				onChange={setText}
-				onSubmit={createComment}
-				suggestGrok={props.useNrAi}
-			/>
+
+			<MentionsTextInput value={text} setTextCallback={setText} />
 			<ButtonRow
 				style={{
 					margin: 0,
@@ -203,20 +210,12 @@ export const CommentInput = (props: CommentInputProps) => {
 					placement="bottomRight"
 					delay={1}
 				>
-					<Button
-						disabled={text.length === 0}
-						onClick={createComment}
-						isLoading={derivedState.isLoading}
-					>
+					<Button disabled={text.length === 0} onClick={createComment} isLoading={isLoadingComment}>
 						Comment
 					</Button>
 				</Tooltip>
 				{props.useNrAi && (
-					<Button
-						style={{ marginLeft: 0 }}
-						onClick={() => setIsAskGrokOpen(true)}
-						isLoading={derivedState.isLoading}
-					>
+					<Button style={{ marginLeft: 0 }} onClick={() => setIsAskGrokOpen(true)}>
 						<Icon name="nrai" />
 						<span style={{ paddingLeft: "4px" }}>Ask AI</span>
 					</Button>
@@ -227,22 +226,6 @@ export const CommentInput = (props: CommentInputProps) => {
 };
 
 export const Comment = forwardRef((props: CommentProps, ref: Ref<HTMLDivElement>) => {
-	const derivedState = useAppSelector((state: CodeStreamState) => {
-		const { users } = state;
-		let authorAsUser: CSUser | undefined;
-
-		for (let user of Object.values(users)) {
-			if (user.nrUserId === props.comment.creator.userId) {
-				authorAsUser = user;
-				break;
-			}
-		}
-
-		return {
-			author: authorAsUser,
-			isLoading: props.isLoading ?? false,
-		};
-	});
 	const currentUserId = useAppSelector((state: CodeStreamState) => state.session.userId!);
 	const currentNrUserId = useAppSelector(currentNrUserIdSelector);
 	const currentUserIsAdmin = useAppSelector(currentUserIsAdminSelector);
@@ -398,6 +381,8 @@ export const Comment = forwardRef((props: CommentProps, ref: Ref<HTMLDivElement>
 							includeCodeBlockCopy={props.comment.creator.name === "AI"}
 							className="reply-markdown-content"
 						/>
+
+						<Attachments attachments={props.comment.attachments} />
 					</MarkdownContent>
 				)}
 			</CommentBody>

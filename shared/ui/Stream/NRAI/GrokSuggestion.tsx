@@ -12,7 +12,15 @@ export const GrokSuggestion = (props: { query: string; onSelect: (text: string) 
 			}}
 		>
 			<div>{props.query}</div>
-			<Button onClick={() => props.onSelect(`@AI ${props.query}`)}>Select</Button>
+			<Button
+				onClick={() =>
+					props.onSelect(
+						`@[AI](<collab-mention data-value="@AI" data-type="NR_BOT" data-mentionable-item-id="NR_BOT">AI</collab-mention>) ${props.query}`
+					)
+				}
+			>
+				Select
+			</Button>
 		</div>
 	);
 };

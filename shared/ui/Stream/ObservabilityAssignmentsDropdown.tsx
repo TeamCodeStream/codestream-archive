@@ -101,7 +101,7 @@ export const ObservabilityAssignmentsDropdown = React.memo((props: Props) => {
 													setIsLoadingErrorGroupGuid(indexedErrorGroupGuid);
 													const response = (await HostApi.instance.send(
 														GetObservabilityErrorGroupMetadataRequestType,
-														{ errorGroupGuid: _.errorGroupGuid }
+														{ errorGroupGuid: _.errorGroupGuid, lastSeenAt: _.lastSeenAt }
 													)) as GetObservabilityErrorGroupMetadataResponse;
 													if (response) {
 														await dispatch(
@@ -117,10 +117,10 @@ export const ObservabilityAssignmentsDropdown = React.memo((props: Props) => {
 																	remote: _?.remote || undefined,
 																	stackSourceMap: response?.stackSourceMap,
 																	domain: props.domain,
-																accountId: derivedState.accountId,
-																entityGuid: props.entityGuid,
-																errorGroupGuid: _.errorGroupGuid,
-                                                                    
+																	accountId: derivedState.accountId,
+																	entityGuid: props.entityGuid,
+																	errorGroupGuid: _.errorGroupGuid,
+																	timestamp: _.lastSeenAt,
 																},
 															})
 														);
@@ -131,7 +131,6 @@ export const ObservabilityAssignmentsDropdown = React.memo((props: Props) => {
 													console.error(ex);
 												} finally {
 													setIsLoadingErrorGroupGuid("");
-
 												}
 											}
 										}}

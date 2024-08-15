@@ -12,6 +12,7 @@ export interface CodeErrorProps {
 	stackTraceTip?: any;
 	isCollapsed?: boolean;
 	readOnly?: boolean;
+	tourStep?: string;
 }
 
 export interface CodeErrorHeaderProps {

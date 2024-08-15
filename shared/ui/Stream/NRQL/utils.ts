@@ -144,3 +144,47 @@ export const isMultiSelect = array => {
 	}
 	return isMultiSelect;
 };
+
+/**
+ * @param dataResults array
+ * @param dataKeys array
+ * @returns array
+ *
+ * General idea is sometimes the value of a result can be an object with
+ * a single key value pair.  We to extract that value and make it readable
+ * for recharts data.
+ *
+ * EX:
+ * [{
+ *   "beginTimeSeconds": 1721747515,
+ *   "endTimeSeconds": 1721747575,
+ *   "result": {
+ *      "75": 8.53125
+ *    }
+ * },...]
+ *
+ * turns into:
+ *
+ * [{
+ *    "beginTimeSeconds": 1721747515,
+ *    "endTimeSeconds": 1721747575,
+ *    "result": 8.53125
+ * },..]
+ *
+ * We can lose the 75 as its not relevant to the results/UX
+ *
+ */
+export const flattenResultsWithObjects = (dataResults: NRQLResult[], dataKeys: string[]) => {
+	let _dataResults = dataResults;
+	let _dataKeys = dataKeys;
+	_dataResults.forEach(item => {
+		_dataKeys.forEach(key => {
+			if (item.hasOwnProperty(key) && typeof item[key] === "object" && item[key]) {
+				const keyValue = Object.keys(item[key])[0];
+				item[key] = item[key][keyValue];
+			}
+		});
+	});
+
+	return _dataResults;
+};

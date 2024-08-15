@@ -1377,6 +1377,7 @@ export interface ObservabilityErrorCore {
 	message: string;
 	errorGroupGuid: string;
 	errorGroupUrl?: string;
+	lastSeenAt?: number;
 }
 
 export interface ObservabilityError extends ObservabilityErrorCore {
@@ -1426,6 +1427,12 @@ export const GetObservabilityErrorsWithoutReposRequestType = new RequestType<
 	void
 >("codestream/newrelic/errorsWithoutRepos");
 
+export interface CollaborationAttachment {
+	id: string;
+	fileName: string;
+	filePath: string;
+}
+
 export interface CollaborationComment {
 	id: string;
 	body: string;
@@ -1435,8 +1442,10 @@ export interface CollaborationComment {
 	creator: {
 		email?: string;
 		name: string;
-		userId: number;
+		userId: string;
 	};
+	externalApplicationType?: string;
+	attachments?: CollaborationAttachment[];
 }
 
 export interface InitiateNrAiRequest {
@@ -1873,6 +1882,7 @@ export interface GetObservabilityErrorGroupMetadataRequest {
 	errorGroupGuid?: string;
 	entityGuid?: string;
 	traceId?: string;
+	lastSeenAt?: number;
 }
 
 export interface GetObservabilityErrorGroupMetadataResponse {
@@ -2399,6 +2409,7 @@ export interface ErrorGroupsResponse {
 					message: string;
 					id: string;
 					entityGuid: string;
+					lastSeenAt: number;
 				}[];
 			};
 		};

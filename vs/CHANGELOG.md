@@ -1,5 +1,24 @@
 # Change Log
 
+## [15.14.0] - 2024-8-15
+
+### Changed
+
+- You can now mention anyone in your New Relic organization when commenting on an error, and you can also assign the error to anyone
+
+### Fixed
+
+- Fixes an issue with the Assigned to Me section only showing errors occurring within the last 30 minutes
+- Explore this Data button when hovering over a Golden Metric now works for non-APM services
+- Fixes an issue where all facets weren't being displayed when there were multiple facets in a query
+
+## [15.13.1] - 2024-8-7
+
+### Fixed
+
+- Fix migrated AI posts not showing up
+- Fix issue with getting logged out after closing IDE
+
 ## [15.13.0] - 2024-8-1
 
 ### Changed

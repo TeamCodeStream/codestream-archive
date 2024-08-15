@@ -164,7 +164,7 @@ export function CodeErrorNavigator(props: Props) {
 			currentMethodLevelTelemetry: state.context.currentMethodLevelTelemetry,
 			currentObservabilityAnomaly: state.context.currentObservabilityAnomaly,
 			sessionStart: state.context.sessionStart,
-			hideCodeErrorInstructions: true, // TODO NR-295770 fix and revert
+			hideCodeErrorInstructions: state.preferences.hideCodeErrorInstructions,
 			codeError: codeError,
 			currentCodemarkId: state.context.currentCodemarkId,
 			errorGroup: errorGroup,
@@ -837,7 +837,7 @@ export function CodeErrorNavigator(props: Props) {
 					className={hoverButton === "resolution" ? "pulse" : ""}
 					style={{ marginLeft: "auto", marginRight: "13px", whiteSpace: "nowrap", flexGrow: 0 }}
 				>
-					<TourTip align={{ offset: [-10, 5] }} title={resolutionTip} placement="bottomLeft">
+					<TourTip title={resolutionTip} placement="bottomLeft">
 						<Icon
 							className="clickable resolution"
 							name="x"
@@ -871,16 +871,17 @@ export function CodeErrorNavigator(props: Props) {
 						>
 							{tryBuildNotification()}
 							{tryBuildWarningsOrErrors()}
-
-							<StyledCodeError className={hoverButton == "stacktrace" ? "pulse" : ""}>
-								<CodeError
-									codeError={derivedState.codeError!}
-									errorGroup={derivedState.errorGroup!}
-									stackFrameClickDisabled={!!repoError}
-									stackTraceTip={stackTraceTip}
-									parsedStackTrace={parsedStack}
-								/>
-							</StyledCodeError>
+							<TourTip align={{ offset: [0, -60] }} title={stackTraceTip} placement={"bottom"}>
+								<StyledCodeError className={hoverButton == "stacktrace" ? "pulse" : ""}>
+									<CodeError
+										codeError={derivedState.codeError!}
+										errorGroup={derivedState.errorGroup!}
+										stackFrameClickDisabled={!!repoError}
+										parsedStackTrace={parsedStack}
+										tourStep={hoverButton}
+									/>
+								</StyledCodeError>
+							</TourTip>
 						</div>
 					</ScrollBox>
 				</div>
