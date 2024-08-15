@@ -43,7 +43,7 @@ export type NrAiComponentProps = {
 function Markdown(props: { text: string }) {
 	return (
 		<MarkdownContent className="error-content-container">
-			<MarkdownText text={props.text} className="error-markdown-content" />
+			<MarkdownText text={props.text} className="error-markdown-content hide-line-numbers" />
 		</MarkdownContent>
 	);
 }
