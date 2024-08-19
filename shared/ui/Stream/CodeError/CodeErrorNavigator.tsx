@@ -269,7 +269,8 @@ export function CodeErrorNavigator(props: Props) {
 		const occurrenceIdToUse = codeErrorData?.occurrenceId;
 		let refToUse: string | undefined;
 		const entityIdToUse =
-			derivedState.codeError?.objectInfo?.entityId ?? derivedState.currentEntityGuid;
+			derivedState.codeError?.objectInfo?.entityId ??
+			(codeErrorData?.openType !== "Open in IDE Flow" ? derivedState.currentEntityGuid : undefined);
 		const accountIdToUse = parseId(entityIdToUse!)?.accountId;
 
 		if (!errorGroupGuidToUse) {

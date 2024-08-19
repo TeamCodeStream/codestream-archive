@@ -1162,7 +1162,6 @@ export class ObservabilityErrorsProvider {
 					guid: errorGroupResponse.id,
 					title: errorGroupResponse.name,
 					message: errorGroupResponse.message,
-
 					errorGroupUrl: `${this.nrApiConfig.productUrl}/redirect/errors-inbox/${errorGroupGuid}`,
 					entityUrl: `${this.nrApiConfig.productUrl}/redirect/entity/${errorGroupResponse.entityGuid}`,
 				};
